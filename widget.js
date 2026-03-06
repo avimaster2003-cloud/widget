@@ -25,9 +25,8 @@
         SECONDARY_COLOR: SCRIPT_PARAMS.get('secondaryColor') || SCRIPT_PARAMS.get('secondary') || "#1E293B",
         TEXT_COLOR: SCRIPT_PARAMS.get('textColor') || SCRIPT_PARAMS.get('text') || "#F1F5F9",
         SESSION_ID: "user_" + Math.random().toString(36).substr(2, 9),
-        // Optional URL to fetch shop config (colors) by shop id. Can be provided
-        // via script query param `configUrl` or left null to skip remote fetch.
-        CONFIG_URL: SCRIPT_PARAMS.get('configUrl') || SCRIPT_PARAMS.get('config') || null,
+        // Optional URL to fetch shop config (colors) by shop id.
+        CONFIG_URL: null,
         N8N_WEBHOOK_URL: "https://api.apexconversiongroup.com/webhook/281ba64b-e245-4ea6-9003-74d79997eb34",
 
         // State
