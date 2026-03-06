@@ -28,7 +28,7 @@
         // Optional URL to fetch shop config (colors) by shop id. Can be provided
         // via script query param `configUrl` or left null to skip remote fetch.
         CONFIG_URL: SCRIPT_PARAMS.get('configUrl') || SCRIPT_PARAMS.get('config') || null,
-        N8N_WEBHOOK_URL: "https://api.apexconversiongroup.com/webhook-test/281ba64b-e245-4ea6-9003-74d79997eb34",
+        N8N_WEBHOOK_URL: "https://api.apexconversiongroup.com/webhook/281ba64b-e245-4ea6-9003-74d79997eb34",
 
         // State
         chatIsOpen: false,
