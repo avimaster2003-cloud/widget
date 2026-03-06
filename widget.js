@@ -28,8 +28,7 @@
         // Optional URL to fetch shop config (colors) by shop id. Can be provided
         // via script query param `configUrl` or left null to skip remote fetch.
         CONFIG_URL: SCRIPT_PARAMS.get('configUrl') || SCRIPT_PARAMS.get('config') || null,
-        N8N_WEBHOOK_URL: SCRIPT_PARAMS.get('webhookUrl') || SCRIPT_PARAMS.get('webhook') || "https://api.apexconversiongroup.com/webhook/281ba64b-e245-4ea6-9003-74d79997eb34",
-        N8N_TEST_MODE: SCRIPT_PARAMS.get('testMode') === '1' || SCRIPT_PARAMS.get('testMode') === 'true',
+        N8N_WEBHOOK_URL: "https://api.apexconversiongroup.com/webhook-test/APEX",
 
         // State
         chatIsOpen: false,
@@ -846,17 +845,10 @@
             };
 
             const self = this;
-            const webhookUrl = this.N8N_WEBHOOK_URL;
-            const resolvedWebhookUrl = this.N8N_TEST_MODE
-                ? webhookUrl.replace('/webhook/', '/webhook-test/')
-                : webhookUrl;
             console.log('[ApexWidget] Sending payload to n8n:', payload);
-            console.log('[ApexWidget] Webhook URL:', resolvedWebhookUrl);
-            if (resolvedWebhookUrl.includes('/webhook-test/')) {
-                console.warn('[ApexWidget] /webhook-test/ only works in n8n test mode. Use /webhook/ for active production workflows.');
-            }
+            console.log('[ApexWidget] Webhook URL:', this.N8N_WEBHOOK_URL);
             
-            fetch(resolvedWebhookUrl, {
+            fetch(this.N8N_WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -868,11 +860,16 @@
             })
             .then(data => {
                 self.removeTypingIndicator();
-                console.log('Response from n8n:', data);
+                console.log('[ApexWidget] Response from n8n:', data);
 
-                const message = data.output || data.message || data.text || JSON.stringify(data);
-                if (message) {
+                // Only display if there's a proper message field
+                const message = data.output || data.message || data.text;
+                if (message && typeof message === 'string') {
                     self.appendBotMessage(message, true);
+                } else {
+                    // If no proper message, show generic success
+                    self.appendBotMessage("Thanks! We've received your request and will get back to you shortly.", true);
+                    console.warn('[ApexWidget] Unexpected response format:', data);
                 }
 
                 // Clear image after successful send
