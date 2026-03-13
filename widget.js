@@ -35,7 +35,10 @@
         loadingMessageIdx: 0,
         loadingInterval: null,
         modelCache: {},
-        awaitingResponse: false,
+        viewportHandlersBound: false,
+        viewportRafId: null,
+        viewportChangeHandler: null,
+        lastKeyboardOffset: 0,
 
         // Hard-cached models for popular brands to enable instant display
         HARD_CACHED_MODELS: {
@@ -222,6 +225,8 @@
                 if (this.PRIMARY_COLOR) container.style.setProperty('--apex-blue', this.PRIMARY_COLOR);
                 if (this.SECONDARY_COLOR) container.style.setProperty('--apex-light-blue', this.SECONDARY_COLOR);
                 if (this.TEXT_COLOR) container.style.setProperty('--apex-text', this.TEXT_COLOR);
+                container.style.setProperty('--apex-runtime-vh', `${window.innerHeight}px`);
+                container.style.setProperty('--apex-keyboard-offset', '0px');
             } catch (e) {
                 // ignore if setting styles fails
             }
@@ -266,15 +271,15 @@
                 
                 inputField: container.querySelector('#apex-chat-input'),
                 sendBtn: container.querySelector('#apex-send-btn'),
-                imageBtn: container.querySelector('#apex-image-btn'),
-                imageInput: container.querySelector('#apex-image-input'),
+                cameraBtn: container.querySelector('#apex-image-btn-camera'),
+                galleryBtn: container.querySelector('#apex-image-btn-gallery'),
+                cameraInput: container.querySelector('#apex-image-input-camera'),
+                galleryInput: container.querySelector('#apex-image-input-gallery'),
                 imagePreviewWrapper: container.querySelector('#apex-image-preview-wrapper'),
                 imagePreview: container.querySelector('#apex-image-preview'),
                 imageRemoveBtn: container.querySelector('#apex-image-remove-btn'),
                 imageUploadWrapper: container.querySelector('#apex-image-upload-wrapper'),
-                imageDataHolder: container.querySelector('#apex-image-data-holder'),
-                newInquiryBtn: container.querySelector('#apex-new-inquiry-btn'),
-                chatInputArea: container.querySelector('#apex-chat-input-area')
+                imageDataHolder: container.querySelector('#apex-image-data-holder')
             };
         },
 
@@ -312,25 +317,30 @@
                 sendBtn.addEventListener('click', () => self.sendMessage());
             }
 
-            const imageBtn = this.elements.imageBtn;
-            const imageInput = this.elements.imageInput;
+            const cameraBtn = this.elements.cameraBtn;
+            const galleryBtn = this.elements.galleryBtn;
+            const cameraInput = this.elements.cameraInput;
+            const galleryInput = this.elements.galleryInput;
             const imageRemoveBtn = this.elements.imageRemoveBtn;
 
-            if (imageBtn && imageInput) {
-                imageBtn.addEventListener('click', () => imageInput.click());
+            if (cameraBtn && cameraInput) {
+                cameraBtn.addEventListener('click', () => cameraInput.click());
             }
 
-            if (imageInput) {
-                imageInput.addEventListener('change', (e) => self.handleImageUpload(e));
+            if (galleryBtn && galleryInput) {
+                galleryBtn.addEventListener('click', () => galleryInput.click());
+            }
+
+            if (cameraInput) {
+                cameraInput.addEventListener('change', (e) => self.handleImageUpload(e));
+            }
+
+            if (galleryInput) {
+                galleryInput.addEventListener('change', (e) => self.handleImageUpload(e));
             }
 
             if (imageRemoveBtn) {
                 imageRemoveBtn.addEventListener('click', () => self.removeImage());
-            }
-
-            const newInquiryBtn = this.elements.newInquiryBtn;
-            if (newInquiryBtn) {
-                newInquiryBtn.addEventListener('click', () => window.location.reload());
             }
         },
 
@@ -338,6 +348,7 @@
             this.appendBotMessage("Hi! I'm your Virtual Service Advisor. I can help with repair estimates, diagnostics, or answer any questions about your vehicle. What can I help you with today?", false);
             this.populateYears();
             this.populateMakes();
+            this.setupViewportHandling();
             // If embed only provided shopId, optionally fetch colors/config from backend
             this.loadRemoteConfigIfNeeded();
             
@@ -349,6 +360,59 @@
                     greetingEl.style.animation = 'apex-greeting-fade-out 400ms cubic-bezier(0.22, 0.9, 0.32, 1) forwards';
                 }
             }, 10000); // 5s delay + 5s visible = 10s total
+        },
+
+        setupViewportHandling() {
+            if (this.viewportHandlersBound) return;
+
+            const handleViewportChange = () => {
+                if (this.viewportRafId) {
+                    cancelAnimationFrame(this.viewportRafId);
+                }
+                this.viewportRafId = requestAnimationFrame(() => {
+                    this.viewportRafId = null;
+                    this.updateViewportMetrics();
+                });
+            };
+
+            this.viewportChangeHandler = handleViewportChange;
+
+            window.addEventListener('resize', handleViewportChange, { passive: true });
+            window.addEventListener('orientationchange', handleViewportChange, { passive: true });
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', handleViewportChange);
+                window.visualViewport.addEventListener('scroll', handleViewportChange);
+            }
+
+            this.viewportHandlersBound = true;
+            this.updateViewportMetrics();
+        },
+
+        updateViewportMetrics() {
+            const container = document.getElementById('apex-widget-container');
+            if (!container) return;
+
+            const isMobileWidth = window.matchMedia('(max-width: 768px)').matches;
+            const vv = window.visualViewport;
+
+            let runtimeVh = window.innerHeight;
+            let keyboardOffset = 0;
+
+            if (vv && isMobileWidth) {
+                runtimeVh = Math.round(vv.height);
+                keyboardOffset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
+            }
+
+            const keyboardJustOpened = this.lastKeyboardOffset <= 0 && keyboardOffset > 0;
+            this.lastKeyboardOffset = keyboardOffset;
+
+            container.style.setProperty('--apex-runtime-vh', `${runtimeVh}px`);
+            container.style.setProperty('--apex-keyboard-offset', `${keyboardOffset}px`);
+
+            if (keyboardJustOpened && this.chatIsOpen && this.elements && this.elements.messagesDiv) {
+                this.elements.messagesDiv.scrollTop = this.elements.messagesDiv.scrollHeight;
+            }
         },
 
         // Normalize color strings (ensure leading # and simple hex validation)
@@ -459,8 +523,15 @@
                     </div>
                     <div id="apex-chat-input-area">
                         <div id="apex-image-upload-wrapper">
-                            <input type="file" id="apex-image-input" accept="image/*" style="display: none;">
-                            <button id="apex-image-btn" aria-label="Upload image" title="Attach image">
+                            <input type="file" id="apex-image-input-camera" accept="image/*" capture="environment" style="display: none;">
+                            <input type="file" id="apex-image-input-gallery" accept="image/*" style="display: none;">
+                            <button id="apex-image-btn-camera" aria-label="Take photo" title="Take photo">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </button>
+                            <button id="apex-image-btn-gallery" aria-label="Choose photo" title="Choose from gallery">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                                 </svg>
@@ -479,13 +550,6 @@
                         </button>
                     </div>
                     <div id="apex-image-data-holder" style="display: none;"></div>
-                    <button id="apex-new-inquiry-btn" style="display: none;" aria-label="Start new inquiry">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; margin-right: 8px;">
-                            <polyline points="1 4 1 10 7 10"></polyline>
-                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                        </svg>
-                        New Inquiry
-                    </button>
                 </div>
             `;
         },
@@ -670,16 +734,10 @@
             messageDiv.innerHTML = '<span class="typing-text"></span>';
             this.elements.messagesDiv.appendChild(messageDiv);
 
-            const self = this;
             if (typewriterEffect) {
                 this.isTyping = true;
                 this.typewriterText(messageDiv.querySelector('.typing-text'), text, () => {
                     this.isTyping = false;
-                    // If this was a response to user message, show new inquiry button
-                    if (self.awaitingResponse) {
-                        self.awaitingResponse = false;
-                        self.showNewInquiryButton();
-                    }
                 });
             } else {
                 messageDiv.querySelector('.typing-text').textContent = text;
@@ -754,17 +812,6 @@
             type();
         },
 
-        showNewInquiryButton() {
-            // Hide the input area
-            if (this.elements.chatInputArea) {
-                this.elements.chatInputArea.style.display = 'none';
-            }
-            // Show the new inquiry button
-            if (this.elements.newInquiryBtn) {
-                this.elements.newInquiryBtn.style.display = 'block';
-            }
-        },
-
         handleKeyPress(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -791,23 +838,55 @@
             // Read file as base64
             const reader = new FileReader();
             reader.onload = (event) => {
-                const base64 = event.target.result;
-                this.elements.imageDataHolder.dataset.imageBase64 = base64;
+                const dataUrl = event.target.result;
+                this.elements.imageDataHolder.dataset.imageBase64 = dataUrl;
                 this.elements.imageDataHolder.dataset.imageType = file.type;
                 
                 // Show preview
-                this.elements.imagePreview.style.backgroundImage = `url('${base64}')`;
+                this.elements.imagePreview.style.backgroundImage = `url('${dataUrl}')`;
                 this.elements.imageUploadWrapper.style.display = 'none';
                 this.elements.imagePreviewWrapper.style.display = 'flex';
+
+                const parsed = this.parseImageDataUrl(dataUrl, file.type);
+                if (!parsed) {
+                    console.warn('[ApexWidget] Uploaded image data URL appears malformed');
+                } else {
+                    console.log('[ApexWidget] Image payload prepared:', {
+                        mime_type: parsed.mimeType,
+                        base64_length: parsed.base64.length,
+                        estimated_bytes: parsed.estimatedBytes
+                    });
+                }
             };
             reader.readAsDataURL(file);
+        },
+
+        parseImageDataUrl(dataUrl, fallbackMimeType = '') {
+            if (!dataUrl || typeof dataUrl !== 'string') return null;
+
+            const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/);
+            if (!match) return null;
+
+            const mimeType = (match[1] || fallbackMimeType || '').toLowerCase();
+            const base64 = (match[2] || '').replace(/\s+/g, '');
+            if (!base64) return null;
+
+            const estimatedBytes = Math.floor((base64.length * 3) / 4) - (base64.endsWith('==') ? 2 : (base64.endsWith('=') ? 1 : 0));
+
+            return {
+                dataUrl,
+                base64,
+                mimeType,
+                estimatedBytes
+            };
         },
 
         removeImage() {
             this.elements.imageDataHolder.dataset.imageBase64 = '';
             this.elements.imageDataHolder.dataset.imageType = '';
             this.elements.imagePreview.style.backgroundImage = '';
-            this.elements.imageInput.value = '';
+            if (this.elements.cameraInput) this.elements.cameraInput.value = '';
+            if (this.elements.galleryInput) this.elements.galleryInput.value = '';
             this.elements.imageUploadWrapper.style.display = 'flex';
             this.elements.imagePreviewWrapper.style.display = 'none';
         },
@@ -843,9 +922,6 @@
             
             if (!text || this.isTyping) return;
 
-            // Mark that we're awaiting a response
-            this.awaitingResponse = true;
-
             this.elements.inputField.value = '';
             this.elements.inputField.disabled = true;
             this.elements.sendBtn.disabled = true;
@@ -858,6 +934,7 @@
             // Get image data if available
             const imageBase64 = this.elements.imageDataHolder.dataset.imageBase64 || '';
             const imageType = this.elements.imageDataHolder.dataset.imageType || '';
+            const parsedImage = imageBase64 ? this.parseImageDataUrl(imageBase64, imageType) : null;
 
             const payload = {
                 message: text,
@@ -872,11 +949,19 @@
                     name: name,
                     phone: phone
                 },
-                image: imageBase64 ? {
-                    data: imageBase64,
-                    type: imageType
+                image: parsedImage ? {
+                    data: parsedImage.dataUrl,
+                    type: parsedImage.mimeType,
+                    data_url: parsedImage.dataUrl,
+                    base64: parsedImage.base64,
+                    mime_type: parsedImage.mimeType,
+                    estimated_bytes: parsedImage.estimatedBytes
                 } : null
             };
+
+            if (imageBase64 && !parsedImage) {
+                console.warn('[ApexWidget] Image was selected but payload format is invalid; sending without image');
+            }
 
             const self = this;
             console.log('[ApexWidget] Sending payload to n8n:', payload);
@@ -959,8 +1044,8 @@
 
                 #apex-chat-button {
                     position: fixed;
-                    bottom: 24px;
-                    right: 24px;
+                    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+                    right: calc(24px + env(safe-area-inset-right, 0px));
                     width: 64px;
                     height: 64px;
                     background: linear-gradient(135deg, var(--apex-blue) 0%, #2563EB 100%);
@@ -990,8 +1075,8 @@
 
                 #apex-proactive-greeting {
                     position: fixed;
-                    bottom: 100px;
-                    right: 24px;
+                    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+                    right: calc(24px + env(safe-area-inset-right, 0px));
                     max-width: 280px;
                     padding: 14px 18px;
                     background: var(--apex-card);
@@ -1022,10 +1107,11 @@
 
                 #apex-chat-window {
                     position: fixed;
-                    bottom: 100px;
-                    right: 24px;
-                    width: 400px;
-                    height: 650px;
+                    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+                    right: calc(24px + env(safe-area-inset-right, 0px));
+                    width: min(400px, calc(100vw - 32px - env(safe-area-inset-right, 0px)));
+                    height: min(650px, calc(100vh - 120px - env(safe-area-inset-bottom, 0px)));
+                    height: min(650px, calc(100dvh - 120px - env(safe-area-inset-bottom, 0px)));
                     background: var(--apex-dark);
                     border-radius: 16px;
                     display: flex;
@@ -1238,7 +1324,7 @@
                     flex-shrink: 0;
                 }
 
-                .apex-typing-text-wrapper { min-width: 260px; display: flex; align-items: center; transition: opacity 450ms ease; }
+                .apex-typing-text-wrapper { min-width: 0; display: flex; align-items: center; transition: opacity 450ms ease; }
                 .apex-typing-text-wrapper.text-fade-out { opacity: 0.3; }
                 .apex-typing-text { font-size: 14px; color: var(--apex-text); font-weight: 400; }
 
@@ -1290,36 +1376,13 @@
                 #apex-send-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4); }
                 #apex-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-                #apex-new-inquiry-btn {
-                    background: linear-gradient(135deg, var(--apex-blue) 0%, #2563EB 100%);
-                    color: white;
-                    border: none;
-                    border-radius: 12px;
-                    padding: 14px 24px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-                    transition: transform 150ms ease, box-shadow 150ms ease;
-                    font-family: inherit;
-                    font-size: 15px;
-                    font-weight: 600;
-                    width: 100%;
-                    margin: 16px;
-                }
-
-                #apex-new-inquiry-btn:hover {
-                    transform: scale(1.02);
-                    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-                }
-
                 #apex-image-upload-wrapper {
                     display: flex;
                     gap: 8px;
                 }
 
-                #apex-image-btn {
+                #apex-image-btn-camera,
+                #apex-image-btn-gallery {
                     background: var(--apex-card);
                     color: var(--apex-text-muted);
                     border: 1px solid var(--apex-border);
@@ -1335,9 +1398,12 @@
                     font-family: inherit;
                 }
 
-                #apex-image-btn svg { width: 20px; height: 20px; }
-                #apex-image-btn:hover { transform: scale(1.05); border-color: var(--apex-blue); color: var(--apex-blue); }
-                #apex-image-btn:active { transform: scale(0.95); }
+                #apex-image-btn-camera svg,
+                #apex-image-btn-gallery svg { width: 20px; height: 20px; }
+                #apex-image-btn-camera:hover,
+                #apex-image-btn-gallery:hover { transform: scale(1.05); border-color: var(--apex-blue); color: var(--apex-blue); }
+                #apex-image-btn-camera:active,
+                #apex-image-btn-gallery:active { transform: scale(0.95); }
 
                 #apex-image-preview-wrapper {
                     display: flex;
@@ -1402,19 +1468,6 @@
                     width: 100%;
                 }
 
-                @media (max-width: 480px) {
-                    #apex-chat-window {
-                        width: calc(100vw - 32px);
-                        height: calc(100vh - 120px);
-                        right: 16px;
-                        bottom: 90px;
-                    }
-                    
-                    .apex-form-row-split {
-                        flex-direction: column;
-                    }
-                }
-
                 .apex-form-disclaimer {
                     font-size: 11px;
                     color: rgba(148, 163, 184, 0.6);
@@ -1476,24 +1529,75 @@
                     100% { opacity: 1; transform: translateY(0); }
                 }
 
-                @media (max-width: 480px) {
-                    #apex-chat-window {
-                        width: calc(100vw - 32px);
-                        height: calc(100vh - 120px);
-                        right: 16px;
-                        bottom: 90px;
+                @media (max-width: 768px) {
+                    #apex-chat-button {
+                        width: 56px;
+                        height: 56px;
+                        right: calc(12px + env(safe-area-inset-right, 0px));
+                        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
                     }
-                    
+
+                    #apex-proactive-greeting {
+                        right: calc(8px + env(safe-area-inset-right, 0px));
+                        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+                        max-width: min(280px, calc(100vw - 24px));
+                    }
+
+                    #apex-chat-window {
+                        right: calc(8px + env(safe-area-inset-right, 0px));
+                        bottom: calc(76px + env(safe-area-inset-bottom, 0px) + var(--apex-keyboard-offset, 0px));
+                        width: calc(100vw - 16px - env(safe-area-inset-right, 0px));
+                        height: min(78vh, calc(var(--apex-runtime-vh, 100dvh) - 96px));
+                        height: min(78dvh, calc(var(--apex-runtime-vh, 100dvh) - 96px));
+                        border-radius: 14px;
+                    }
+
                     .apex-form-row-split {
                         flex-direction: column;
                     }
-                }
 
-                @media (max-width: 768px) {
                     .apex-input,
                     .apex-select,
                     #apex-chat-input {
                         font-size: 16px;
+                    }
+                }
+
+                @media (max-width: 430px) {
+                    #apex-chat-window {
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 0;
+                        border: none;
+                        transform-origin: bottom center;
+                    }
+
+                    #apex-proactive-greeting {
+                        display: none;
+                    }
+
+                    #apex-chat-header {
+                        padding: 16px 16px;
+                        padding-top: calc(16px + env(safe-area-inset-top, 0px));
+                    }
+
+                    #apex-chat-messages {
+                        padding: 14px;
+                    }
+
+                    #apex-chat-input-area {
+                        padding: 12px;
+                        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+                        padding-bottom: calc(12px + max(env(safe-area-inset-bottom, 0px), var(--apex-keyboard-offset, 0px)));
+                    }
+
+                    .apex-message,
+                    .apex-typing-bubble {
+                        max-width: 92%;
                     }
                 }
             `;
