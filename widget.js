@@ -35,6 +35,7 @@
         loadingMessageIdx: 0,
         loadingInterval: null,
         modelCache: {},
+        awaitingResponse: false,
 
         // Hard-cached models for popular brands to enable instant display
         HARD_CACHED_MODELS: {
@@ -271,7 +272,9 @@
                 imagePreview: container.querySelector('#apex-image-preview'),
                 imageRemoveBtn: container.querySelector('#apex-image-remove-btn'),
                 imageUploadWrapper: container.querySelector('#apex-image-upload-wrapper'),
-                imageDataHolder: container.querySelector('#apex-image-data-holder')
+                imageDataHolder: container.querySelector('#apex-image-data-holder'),
+                newInquiryBtn: container.querySelector('#apex-new-inquiry-btn'),
+                chatInputArea: container.querySelector('#apex-chat-input-area')
             };
         },
 
@@ -323,6 +326,11 @@
 
             if (imageRemoveBtn) {
                 imageRemoveBtn.addEventListener('click', () => self.removeImage());
+            }
+
+            const newInquiryBtn = this.elements.newInquiryBtn;
+            if (newInquiryBtn) {
+                newInquiryBtn.addEventListener('click', () => window.location.reload());
             }
         },
 
@@ -471,6 +479,13 @@
                         </button>
                     </div>
                     <div id="apex-image-data-holder" style="display: none;"></div>
+                    <button id="apex-new-inquiry-btn" style="display: none;" aria-label="Start new inquiry">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; margin-right: 8px;">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        New Inquiry
+                    </button>
                 </div>
             `;
         },
@@ -655,10 +670,16 @@
             messageDiv.innerHTML = '<span class="typing-text"></span>';
             this.elements.messagesDiv.appendChild(messageDiv);
 
+            const self = this;
             if (typewriterEffect) {
                 this.isTyping = true;
                 this.typewriterText(messageDiv.querySelector('.typing-text'), text, () => {
                     this.isTyping = false;
+                    // If this was a response to user message, show new inquiry button
+                    if (self.awaitingResponse) {
+                        self.awaitingResponse = false;
+                        self.showNewInquiryButton();
+                    }
                 });
             } else {
                 messageDiv.querySelector('.typing-text').textContent = text;
@@ -731,6 +752,17 @@
                 }
             };
             type();
+        },
+
+        showNewInquiryButton() {
+            // Hide the input area
+            if (this.elements.chatInputArea) {
+                this.elements.chatInputArea.style.display = 'none';
+            }
+            // Show the new inquiry button
+            if (this.elements.newInquiryBtn) {
+                this.elements.newInquiryBtn.style.display = 'block';
+            }
         },
 
         handleKeyPress(e) {
@@ -810,6 +842,9 @@
             }
             
             if (!text || this.isTyping) return;
+
+            // Mark that we're awaiting a response
+            this.awaitingResponse = true;
 
             this.elements.inputField.value = '';
             this.elements.inputField.disabled = true;
@@ -1254,6 +1289,30 @@
                 #apex-send-btn svg { width: 20px; height: 20px; }
                 #apex-send-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4); }
                 #apex-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+                #apex-new-inquiry-btn {
+                    background: linear-gradient(135deg, var(--apex-blue) 0%, #2563EB 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 14px 24px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+                    transition: transform 150ms ease, box-shadow 150ms ease;
+                    font-family: inherit;
+                    font-size: 15px;
+                    font-weight: 600;
+                    width: 100%;
+                    margin: 16px;
+                }
+
+                #apex-new-inquiry-btn:hover {
+                    transform: scale(1.02);
+                    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+                }
 
                 #apex-image-upload-wrapper {
                     display: flex;
