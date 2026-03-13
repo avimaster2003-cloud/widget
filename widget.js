@@ -396,26 +396,13 @@
             const container = document.getElementById('apex-widget-container');
             if (!container) return;
 
-            const isMobileWidth = window.matchMedia('(max-width: 768px)').matches;
-            const vv = window.visualViewport;
+            const runtimeVh = window.innerHeight;
+            const keyboardOffset = 0;
 
-            let runtimeVh = window.innerHeight;
-            let keyboardOffset = 0;
-
-            if (vv && isMobileWidth) {
-                runtimeVh = Math.round(vv.height);
-                keyboardOffset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
-            }
-
-            const keyboardJustOpened = this.lastKeyboardOffset <= 0 && keyboardOffset > 0;
-            this.lastKeyboardOffset = keyboardOffset;
+            this.lastKeyboardOffset = 0;
 
             container.style.setProperty('--apex-runtime-vh', `${runtimeVh}px`);
             container.style.setProperty('--apex-keyboard-offset', `${keyboardOffset}px`);
-
-            if (keyboardJustOpened && this.chatIsOpen && this.elements && this.elements.messagesDiv) {
-                this.elements.messagesDiv.scrollTop = this.elements.messagesDiv.scrollHeight;
-            }
         },
 
         // Normalize color strings (ensure leading # and simple hex validation)
@@ -1611,7 +1598,7 @@
 
                     #apex-chat-window {
                         right: calc(8px + env(safe-area-inset-right, 0px));
-                        bottom: calc(76px + env(safe-area-inset-bottom, 0px) + var(--apex-keyboard-offset, 0px));
+                        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
                         width: calc(100vw - 16px - env(safe-area-inset-right, 0px));
                         height: min(78vh, calc(var(--apex-runtime-vh, 100dvh) - 96px));
                         height: min(78dvh, calc(var(--apex-runtime-vh, 100dvh) - 96px));
@@ -1634,7 +1621,7 @@
                         top: calc(env(safe-area-inset-top, 0px) + 8px);
                         left: 8px;
                         right: 8px;
-                        bottom: calc(8px + max(env(safe-area-inset-bottom, 0px), var(--apex-keyboard-offset, 0px)));
+                        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
                         width: auto;
                         height: auto;
                         border-radius: 18px;
@@ -1692,7 +1679,7 @@
                     #apex-chat-input-area {
                         padding: 10px;
                         gap: 8px;
-                        padding-bottom: calc(10px + max(env(safe-area-inset-bottom, 0px), var(--apex-keyboard-offset, 0px)));
+                        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
                     }
 
                     #apex-image-btn-camera,
