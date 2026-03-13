@@ -714,7 +714,9 @@
             this.elements.chatButton.classList.add('morphing');
             this.elements.chatWindow.classList.add('open');
             this.elements.backdrop.classList.add('visible');
-            this.elements.inputField.focus();
+            if (!window.matchMedia('(max-width: 768px)').matches) {
+                this.elements.inputField.focus();
+            }
             this.elements.prideTextDiv.style.opacity = '0';
             this.elements.prideTextDiv.style.pointerEvents = 'none';
         },
@@ -1565,14 +1567,14 @@
 
                 @media (max-width: 430px) {
                     #apex-chat-window {
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        width: 100%;
-                        height: 100%;
-                        border-radius: 0;
-                        border: none;
+                        top: calc(env(safe-area-inset-top, 0px) + 8px);
+                        left: 8px;
+                        right: 8px;
+                        bottom: calc(8px + max(env(safe-area-inset-bottom, 0px), var(--apex-keyboard-offset, 0px)));
+                        width: auto;
+                        height: auto;
+                        border-radius: 18px;
+                        border: 1px solid var(--apex-border);
                         transform-origin: bottom center;
                     }
 
@@ -1581,18 +1583,65 @@
                     }
 
                     #apex-chat-header {
-                        padding: 16px 16px;
-                        padding-top: calc(16px + env(safe-area-inset-top, 0px));
+                        gap: 10px;
+                        padding: 14px;
+                        padding-top: calc(14px + env(safe-area-inset-top, 0px));
+                    }
+
+                    #apex-avatar {
+                        width: 32px;
+                        height: 32px;
+                    }
+
+                    #apex-header-title {
+                        font-size: 15px;
+                    }
+
+                    #apex-header-subtitle,
+                    #apex-header-model {
+                        font-size: 11px;
                     }
 
                     #apex-chat-messages {
-                        padding: 14px;
+                        padding: 12px;
+                        gap: 10px;
+                    }
+
+                    .apex-form-section {
+                        padding: 12px 14px;
+                        gap: 8px;
+                        max-height: min(32vh, 220px);
+                        overflow-y: auto;
+                    }
+
+                    .apex-form-disclaimer {
+                        font-size: 10px;
+                        margin-top: 4px;
+                    }
+
+                    .apex-input,
+                    .apex-select {
+                        padding: 10px 12px;
+                        font-size: 16px;
                     }
 
                     #apex-chat-input-area {
-                        padding: 12px;
-                        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-                        padding-bottom: calc(12px + max(env(safe-area-inset-bottom, 0px), var(--apex-keyboard-offset, 0px)));
+                        padding: 10px;
+                        gap: 8px;
+                        padding-bottom: calc(10px + max(env(safe-area-inset-bottom, 0px), var(--apex-keyboard-offset, 0px)));
+                    }
+
+                    #apex-image-btn-camera,
+                    #apex-image-btn-gallery,
+                    #apex-send-btn {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 10px;
+                    }
+
+                    #apex-image-preview {
+                        width: 40px;
+                        height: 40px;
                     }
 
                     .apex-message,
