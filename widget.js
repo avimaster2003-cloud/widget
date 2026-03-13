@@ -39,6 +39,9 @@
         viewportRafId: null,
         viewportChangeHandler: null,
         lastKeyboardOffset: 0,
+        imageIsProcessing: false,
+        imageProcessingPromise: null,
+        imageUploadToken: 0,
 
         // Hard-cached models for popular brands to enable instant display
         HARD_CACHED_MODELS: {
@@ -821,6 +824,24 @@
             }
         },
 
+        setImageProcessing(isProcessing) {
+            this.imageIsProcessing = isProcessing;
+
+            if (this.elements && this.elements.sendBtn) {
+                this.elements.sendBtn.disabled = !!isProcessing;
+            }
+        },
+
+        waitForImageProcessing() {
+            if (!this.imageProcessingPromise) {
+                return Promise.resolve();
+            }
+
+            return this.imageProcessingPromise.catch((err) => {
+                console.warn('[ApexWidget] Image processing did not complete successfully before send', err);
+            });
+        },
+
         handleImageUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -837,29 +858,63 @@
                 return;
             }
 
+            const uploadToken = ++this.imageUploadToken;
+            this.setImageProcessing(true);
+
             // Read file as base64
             const reader = new FileReader();
-            reader.onload = (event) => {
-                const dataUrl = event.target.result;
-                this.elements.imageDataHolder.dataset.imageBase64 = dataUrl;
-                this.elements.imageDataHolder.dataset.imageType = file.type;
-                
-                // Show preview
-                this.elements.imagePreview.style.backgroundImage = `url('${dataUrl}')`;
-                this.elements.imageUploadWrapper.style.display = 'none';
-                this.elements.imagePreviewWrapper.style.display = 'flex';
+            this.imageProcessingPromise = new Promise((resolve, reject) => {
+                reader.onload = (event) => {
+                    try {
+                        if (uploadToken !== this.imageUploadToken) {
+                            resolve();
+                            return;
+                        }
 
-                const parsed = this.parseImageDataUrl(dataUrl, file.type);
-                if (!parsed) {
-                    console.warn('[ApexWidget] Uploaded image data URL appears malformed');
-                } else {
-                    console.log('[ApexWidget] Image payload prepared:', {
-                        mime_type: parsed.mimeType,
-                        base64_length: parsed.base64.length,
-                        estimated_bytes: parsed.estimatedBytes
-                    });
-                }
-            };
+                        const dataUrl = event.target.result;
+                        this.elements.imageDataHolder.dataset.imageBase64 = dataUrl;
+                        this.elements.imageDataHolder.dataset.imageType = file.type;
+                        
+                        // Show preview
+                        this.elements.imagePreview.style.backgroundImage = `url('${dataUrl}')`;
+                        this.elements.imageUploadWrapper.style.display = 'none';
+                        this.elements.imagePreviewWrapper.style.display = 'flex';
+
+                        const parsed = this.parseImageDataUrl(dataUrl, file.type);
+                        if (!parsed) {
+                            console.warn('[ApexWidget] Uploaded image data URL appears malformed');
+                        } else {
+                            console.log('[ApexWidget] Image payload prepared:', {
+                                mime_type: parsed.mimeType,
+                                base64_length: parsed.base64.length,
+                                estimated_bytes: parsed.estimatedBytes
+                            });
+                        }
+
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                reader.onerror = () => {
+                    reject(reader.error || new Error('Failed to read image file'));
+                };
+            })
+                .catch((err) => {
+                    if (uploadToken === this.imageUploadToken) {
+                        this.appendBotMessage('There was a problem processing that image. Please try again.', false);
+                        this.removeImage();
+                    }
+                    throw err;
+                })
+                .finally(() => {
+                    if (uploadToken === this.imageUploadToken) {
+                        this.setImageProcessing(false);
+                        this.imageProcessingPromise = null;
+                    }
+                });
+
             reader.readAsDataURL(file);
         },
 
@@ -884,6 +939,9 @@
         },
 
         removeImage() {
+            this.imageUploadToken += 1;
+            this.imageProcessingPromise = null;
+            this.setImageProcessing(false);
             this.elements.imageDataHolder.dataset.imageBase64 = '';
             this.elements.imageDataHolder.dataset.imageType = '';
             this.elements.imagePreview.style.backgroundImage = '';
@@ -893,7 +951,7 @@
             this.elements.imagePreviewWrapper.style.display = 'none';
         },
 
-        sendMessage() {
+        async sendMessage() {
             const text = this.elements.inputField.value.trim();
             const name = this.elements.contactName.value.trim();
             const phone = this.elements.contactPhone.value.trim();
@@ -924,6 +982,8 @@
             
             if (!text || this.isTyping) return;
 
+            await this.waitForImageProcessing();
+
             this.elements.inputField.value = '';
             this.elements.inputField.disabled = true;
             this.elements.sendBtn.disabled = true;
@@ -951,6 +1011,10 @@
                     name: name,
                     phone: phone
                 },
+                image64: parsedImage ? parsedImage.base64 : null,
+                image_mime_type: parsedImage ? parsedImage.mimeType : null,
+                image_data_url: parsedImage ? parsedImage.dataUrl : null,
+                image_estimated_bytes: parsedImage ? parsedImage.estimatedBytes : null,
                 image: parsedImage ? {
                     data: parsedImage.dataUrl,
                     type: parsedImage.mimeType,
