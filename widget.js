@@ -43,24 +43,279 @@
         imageProcessingPromise: null,
         imageUploadToken: 0,
 
-        // Hard-cached models for popular brands to enable instant display
-        HARD_CACHED_MODELS: {
-            "Ford": ["F-150", "F-250", "F-350", "Escape", "Edge", "Explorer", "Expedition", "Fusion", "Mustang", "Focus", "Fiesta", "Transit"],
-            "Honda": ["Accord", "Civic", "CR-V", "Pilot", "Odyssey", "HR-V", "Insight", "Ridgeline", "Fit"],
-            "Toyota": ["Camry", "Corolla", "RAV4", "Highlander", "Sienna", "Tundra", "Tacoma", "4Runner", "Sequoia", "Prius", "Aqua"],
-            "Chevrolet": ["Silverado", "Malibu", "Equinox", "Traverse", "Tahoe", "Suburban", "Colorado", "Spark", "Bolt", "Blazer"],
-            "Dodge": ["Ram", "Charger", "Challenger", "Durango", "Journey", "Dart"],
-            "BMW": ["3 Series", "5 Series", "7 Series", "X1", "X3", "X5", "X7", "M440i", "M550i", "M760i", "i3", "i4", "iX", "i7", "Z4", "M2", "M3", "M4", "M5", "M8"],
-            "Mercedes-Benz": ["C-Class", "E-Class", "S-Class", "A-Class", "GLA", "GLB", "GLC", "GLE", "GLS", "AMG"],
-            "Audi": ["A3", "A4", "A6", "A8", "Q3", "Q5", "Q7", "Q8", "RS3", "RS4", "RS5", "RS6", "RS7"],
-            "Tesla": ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck"],
-            "Jeep": ["Wrangler", "Cherokee", "Grand Cherokee", "Renegade", "Compass", "Gladiator"]
-        },
-
-        // Common makes list
+        // Consumer-only makes supported by hardcoded year/model data (2005-2025)
         COMMON_MAKES: [
-            "Acura","Alfa Romeo","Aston Martin","Audi","Bentley","BMW","Buick","Cadillac","Chevrolet","Chrysler","Dodge","FIAT","Fisker","Ford","Genesis","Geo","GMC","Honda","Hummer","Hyundai","Infiniti","Isuzu","Jaguar","Jeep","Karma","Kia","Land Rover","Lexus","Lincoln","Lotus","Maserati","Mazda","Mercedes-Benz","Mercury","Merkur","MINI","Mitsubishi","Nissan","Oldsmobile","Peugeot","Plymouth","Pontiac","Porsche","Ram","Renault","Saab","Saturn","Scion","smart","Subaru","Suzuki","Tesla","Toyota","Triumph","Volkswagen","Volvo"
+            "Acura", "Cadillac", "Chrysler", "Dodge", "Ford", "Genesis", "Honda", "Hyundai", "Jaguar", "Lexus", "MINI", "Mitsubishi", "Ram", "Volkswagen", "Volvo"
         ],
+
+        // Hardcoded model ranges by make to prevent invalid year/model combinations.
+        // Each model appears only for valid years in the 2005-2025 window.
+        HARD_CODED_MODEL_RANGES: {
+            "Acura": [
+                { model: "CSX", minYear: 2006, maxYear: 2011 },
+                { model: "ILX", minYear: 2013, maxYear: 2022 },
+                { model: "Integra", minYear: 2023, maxYear: 2025 },
+                { model: "MDX", minYear: 2005, maxYear: 2025 },
+                { model: "NSX", minYear: 2017, maxYear: 2022 },
+                { model: "RDX", minYear: 2007, maxYear: 2025 },
+                { model: "RL", minYear: 2005, maxYear: 2012 },
+                { model: "RLX", minYear: 2014, maxYear: 2020 },
+                { model: "RSX", minYear: 2005, maxYear: 2006 },
+                { model: "TL", minYear: 2005, maxYear: 2014 },
+                { model: "TLX", minYear: 2015, maxYear: 2025 },
+                { model: "TSX", minYear: 2005, maxYear: 2014 },
+                { model: "ZDX", minYear: 2010, maxYear: 2013 },
+                { model: "ZDX", minYear: 2024, maxYear: 2025 }
+            ],
+            "Cadillac": [
+                { model: "ATS", minYear: 2013, maxYear: 2019 },
+                { model: "ATS-V", minYear: 2016, maxYear: 2019 },
+                { model: "CT4", minYear: 2020, maxYear: 2025 },
+                { model: "CT4-V", minYear: 2020, maxYear: 2025 },
+                { model: "CT5", minYear: 2020, maxYear: 2025 },
+                { model: "CT5-V", minYear: 2020, maxYear: 2025 },
+                { model: "CT6", minYear: 2016, maxYear: 2020 },
+                { model: "CTS", minYear: 2005, maxYear: 2019 },
+                { model: "CTS-V", minYear: 2005, maxYear: 2019 },
+                { model: "DTS", minYear: 2006, maxYear: 2011 },
+                { model: "ELR", minYear: 2014, maxYear: 2016 },
+                { model: "Escalade", minYear: 2005, maxYear: 2025 },
+                { model: "Lyriq", minYear: 2023, maxYear: 2025 },
+                { model: "SRX", minYear: 2005, maxYear: 2016 },
+                { model: "STS", minYear: 2005, maxYear: 2011 },
+                { model: "XLR", minYear: 2005, maxYear: 2009 },
+                { model: "XT4", minYear: 2019, maxYear: 2025 },
+                { model: "XT5", minYear: 2017, maxYear: 2025 },
+                { model: "XT6", minYear: 2020, maxYear: 2025 }
+            ],
+            "Chrysler": [
+                { model: "200", minYear: 2011, maxYear: 2017 },
+                { model: "300", minYear: 2005, maxYear: 2025 },
+                { model: "Aspen", minYear: 2007, maxYear: 2009 },
+                { model: "Crossfire", minYear: 2005, maxYear: 2008 },
+                { model: "Pacifica", minYear: 2005, maxYear: 2008 },
+                { model: "Pacifica", minYear: 2017, maxYear: 2025 },
+                { model: "PT Cruiser", minYear: 2005, maxYear: 2010 },
+                { model: "Sebring", minYear: 2005, maxYear: 2010 },
+                { model: "Town & Country", minYear: 2005, maxYear: 2016 },
+                { model: "Voyager", minYear: 2020, maxYear: 2025 }
+            ],
+            "Dodge": [
+                { model: "Avenger", minYear: 2008, maxYear: 2014 },
+                { model: "Caliber", minYear: 2007, maxYear: 2012 },
+                { model: "Challenger", minYear: 2008, maxYear: 2025 },
+                { model: "Charger", minYear: 2005, maxYear: 2025 },
+                { model: "Dakota", minYear: 2005, maxYear: 2011 },
+                { model: "Dart", minYear: 2013, maxYear: 2016 },
+                { model: "Durango", minYear: 2005, maxYear: 2025 },
+                { model: "Grand Caravan", minYear: 2005, maxYear: 2020 },
+                { model: "Hornet", minYear: 2023, maxYear: 2025 },
+                { model: "Journey", minYear: 2009, maxYear: 2020 },
+                { model: "Magnum", minYear: 2005, maxYear: 2008 },
+                { model: "Nitro", minYear: 2007, maxYear: 2012 },
+                { model: "Viper", minYear: 2013, maxYear: 2017 }
+            ],
+            "Ford": [
+                { model: "Bronco", minYear: 2021, maxYear: 2025 },
+                { model: "Bronco Sport", minYear: 2021, maxYear: 2025 },
+                { model: "C-Max", minYear: 2013, maxYear: 2018 },
+                { model: "Crown Victoria", minYear: 2005, maxYear: 2011 },
+                { model: "E-Series", minYear: 2005, maxYear: 2014 },
+                { model: "EcoSport", minYear: 2018, maxYear: 2022 },
+                { model: "Edge", minYear: 2007, maxYear: 2024 },
+                { model: "Escape", minYear: 2005, maxYear: 2025 },
+                { model: "Excursion", minYear: 2005, maxYear: 2005 },
+                { model: "Expedition", minYear: 2005, maxYear: 2025 },
+                { model: "Explorer", minYear: 2005, maxYear: 2025 },
+                { model: "F-150", minYear: 2005, maxYear: 2025 },
+                { model: "F-250", minYear: 2005, maxYear: 2025 },
+                { model: "F-350", minYear: 2005, maxYear: 2025 },
+                { model: "F-450", minYear: 2005, maxYear: 2025 },
+                { model: "Fiesta", minYear: 2011, maxYear: 2019 },
+                { model: "Five Hundred", minYear: 2005, maxYear: 2007 },
+                { model: "Flex", minYear: 2009, maxYear: 2019 },
+                { model: "Focus", minYear: 2005, maxYear: 2018 },
+                { model: "Freestar", minYear: 2005, maxYear: 2007 },
+                { model: "Freestyle", minYear: 2005, maxYear: 2007 },
+                { model: "Fusion", minYear: 2006, maxYear: 2020 },
+                { model: "GT", minYear: 2005, maxYear: 2006 },
+                { model: "GT", minYear: 2017, maxYear: 2022 },
+                { model: "Maverick", minYear: 2022, maxYear: 2025 },
+                { model: "Mustang", minYear: 2005, maxYear: 2025 },
+                { model: "Mustang Mach-E", minYear: 2021, maxYear: 2025 },
+                { model: "Ranger", minYear: 2005, maxYear: 2012 },
+                { model: "Ranger", minYear: 2019, maxYear: 2025 },
+                { model: "Taurus", minYear: 2005, maxYear: 2019 },
+                { model: "Taurus X", minYear: 2008, maxYear: 2009 },
+                { model: "Thunderbird", minYear: 2005, maxYear: 2005 },
+                { model: "Transit", minYear: 2015, maxYear: 2025 },
+                { model: "Transit Connect", minYear: 2010, maxYear: 2023 }
+            ],
+            "Genesis": [
+                { model: "G70", minYear: 2019, maxYear: 2025 },
+                { model: "G80", minYear: 2017, maxYear: 2025 },
+                { model: "G90", minYear: 2017, maxYear: 2025 },
+                { model: "GV60", minYear: 2023, maxYear: 2025 },
+                { model: "GV70", minYear: 2022, maxYear: 2025 },
+                { model: "GV80", minYear: 2021, maxYear: 2025 }
+            ],
+            "Honda": [
+                { model: "Accord", minYear: 2005, maxYear: 2025 },
+                { model: "Civic", minYear: 2005, maxYear: 2025 },
+                { model: "Clarity", minYear: 2017, maxYear: 2021 },
+                { model: "Crosstour", minYear: 2010, maxYear: 2015 },
+                { model: "CR-V", minYear: 2005, maxYear: 2025 },
+                { model: "CR-Z", minYear: 2011, maxYear: 2016 },
+                { model: "Element", minYear: 2005, maxYear: 2011 },
+                { model: "Fit", minYear: 2007, maxYear: 2020 },
+                { model: "HR-V", minYear: 2016, maxYear: 2025 },
+                { model: "Insight", minYear: 2010, maxYear: 2014 },
+                { model: "Insight", minYear: 2019, maxYear: 2022 },
+                { model: "Odyssey", minYear: 2005, maxYear: 2025 },
+                { model: "Passport", minYear: 2019, maxYear: 2025 },
+                { model: "Pilot", minYear: 2005, maxYear: 2025 },
+                { model: "Prologue", minYear: 2024, maxYear: 2025 },
+                { model: "Ridgeline", minYear: 2006, maxYear: 2025 },
+                { model: "S2000", minYear: 2005, maxYear: 2009 }
+            ],
+            "Hyundai": [
+                { model: "Accent", minYear: 2005, maxYear: 2022 },
+                { model: "Azera", minYear: 2006, maxYear: 2017 },
+                { model: "Elantra", minYear: 2005, maxYear: 2025 },
+                { model: "Entourage", minYear: 2007, maxYear: 2009 },
+                { model: "Equus", minYear: 2011, maxYear: 2016 },
+                { model: "Genesis", minYear: 2009, maxYear: 2016 },
+                { model: "Ioniq", minYear: 2017, maxYear: 2022 },
+                { model: "Ioniq 5", minYear: 2022, maxYear: 2025 },
+                { model: "Ioniq 6", minYear: 2023, maxYear: 2025 },
+                { model: "Kona", minYear: 2018, maxYear: 2025 },
+                { model: "Kona Electric", minYear: 2019, maxYear: 2025 },
+                { model: "Nexo", minYear: 2019, maxYear: 2025 },
+                { model: "Palisade", minYear: 2020, maxYear: 2025 },
+                { model: "Santa Cruz", minYear: 2022, maxYear: 2025 },
+                { model: "Santa Fe", minYear: 2005, maxYear: 2025 },
+                { model: "Sonata", minYear: 2005, maxYear: 2025 },
+                { model: "Tiburon", minYear: 2005, maxYear: 2008 },
+                { model: "Tucson", minYear: 2005, maxYear: 2025 },
+                { model: "Veloster", minYear: 2012, maxYear: 2022 },
+                { model: "Venue", minYear: 2020, maxYear: 2025 },
+                { model: "Veracruz", minYear: 2007, maxYear: 2012 },
+                { model: "XG350", minYear: 2005, maxYear: 2005 }
+            ],
+            "Jaguar": [
+                { model: "E-PACE", minYear: 2018, maxYear: 2025 },
+                { model: "F-PACE", minYear: 2017, maxYear: 2025 },
+                { model: "F-TYPE", minYear: 2014, maxYear: 2024 },
+                { model: "I-PACE", minYear: 2019, maxYear: 2025 },
+                { model: "S-TYPE", minYear: 2005, maxYear: 2008 },
+                { model: "X-TYPE", minYear: 2005, maxYear: 2009 },
+                { model: "XE", minYear: 2017, maxYear: 2020 },
+                { model: "XF", minYear: 2009, maxYear: 2025 },
+                { model: "XJ", minYear: 2005, maxYear: 2019 },
+                { model: "XK", minYear: 2007, maxYear: 2015 }
+            ],
+            "Lexus": [
+                { model: "CT 200h", minYear: 2011, maxYear: 2017 },
+                { model: "ES", minYear: 2005, maxYear: 2025 },
+                { model: "GS", minYear: 2005, maxYear: 2020 },
+                { model: "GX", minYear: 2005, maxYear: 2025 },
+                { model: "HS 250h", minYear: 2010, maxYear: 2012 },
+                { model: "IS", minYear: 2005, maxYear: 2025 },
+                { model: "LC", minYear: 2018, maxYear: 2025 },
+                { model: "LFA", minYear: 2011, maxYear: 2012 },
+                { model: "LM", minYear: 2024, maxYear: 2025 },
+                { model: "LS", minYear: 2005, maxYear: 2025 },
+                { model: "LX", minYear: 2005, maxYear: 2025 },
+                { model: "NX", minYear: 2015, maxYear: 2025 },
+                { model: "RC", minYear: 2015, maxYear: 2025 },
+                { model: "RZ", minYear: 2023, maxYear: 2025 },
+                { model: "RX", minYear: 2005, maxYear: 2025 },
+                { model: "SC", minYear: 2005, maxYear: 2010 },
+                { model: "TX", minYear: 2024, maxYear: 2025 },
+                { model: "UX", minYear: 2019, maxYear: 2025 }
+            ],
+            "MINI": [
+                { model: "Clubman", minYear: 2008, maxYear: 2024 },
+                { model: "Convertible", minYear: 2005, maxYear: 2025 },
+                { model: "Cooper", minYear: 2005, maxYear: 2025 },
+                { model: "Cooper Countryman", minYear: 2011, maxYear: 2025 },
+                { model: "Cooper Coupe", minYear: 2012, maxYear: 2015 },
+                { model: "Cooper Hardtop", minYear: 2005, maxYear: 2025 },
+                { model: "Cooper Paceman", minYear: 2013, maxYear: 2016 },
+                { model: "Cooper Roadster", minYear: 2012, maxYear: 2015 },
+                { model: "Countryman", minYear: 2011, maxYear: 2025 },
+                { model: "Hardtop 2 Door", minYear: 2014, maxYear: 2025 },
+                { model: "Hardtop 4 Door", minYear: 2015, maxYear: 2025 }
+            ],
+            "Mitsubishi": [
+                { model: "3000GT", minYear: 2005, maxYear: 2005 },
+                { model: "Eclipse", minYear: 2005, maxYear: 2012 },
+                { model: "Eclipse Cross", minYear: 2018, maxYear: 2025 },
+                { model: "Endeavor", minYear: 2005, maxYear: 2011 },
+                { model: "Galant", minYear: 2005, maxYear: 2012 },
+                { model: "i-MiEV", minYear: 2012, maxYear: 2017 },
+                { model: "Lancer", minYear: 2005, maxYear: 2017 },
+                { model: "Mirage", minYear: 2014, maxYear: 2025 },
+                { model: "Mirage G4", minYear: 2017, maxYear: 2025 },
+                { model: "Montero", minYear: 2005, maxYear: 2006 },
+                { model: "Outlander", minYear: 2005, maxYear: 2025 },
+                { model: "Outlander PHEV", minYear: 2018, maxYear: 2025 },
+                { model: "Outlander Sport", minYear: 2011, maxYear: 2025 },
+                { model: "Raider", minYear: 2006, maxYear: 2009 }
+            ],
+            "Ram": [
+                { model: "1500", minYear: 2011, maxYear: 2025 },
+                { model: "1500 Classic", minYear: 2019, maxYear: 2025 },
+                { model: "2500", minYear: 2011, maxYear: 2025 },
+                { model: "3500", minYear: 2011, maxYear: 2025 },
+                { model: "4500", minYear: 2011, maxYear: 2025 },
+                { model: "ProMaster", minYear: 2014, maxYear: 2025 },
+                { model: "ProMaster City", minYear: 2015, maxYear: 2022 }
+            ],
+            "Volkswagen": [
+                { model: "Arteon", minYear: 2019, maxYear: 2024 },
+                { model: "Atlas", minYear: 2018, maxYear: 2025 },
+                { model: "Atlas Cross Sport", minYear: 2020, maxYear: 2025 },
+                { model: "Beetle", minYear: 2012, maxYear: 2019 },
+                { model: "CC", minYear: 2009, maxYear: 2017 },
+                { model: "e-Golf", minYear: 2015, maxYear: 2019 },
+                { model: "EOS", minYear: 2007, maxYear: 2016 },
+                { model: "Golf", minYear: 2005, maxYear: 2021 },
+                { model: "Golf Alltrack", minYear: 2017, maxYear: 2019 },
+                { model: "Golf GTI", minYear: 2005, maxYear: 2025 },
+                { model: "Golf R", minYear: 2012, maxYear: 2025 },
+                { model: "GTI", minYear: 2005, maxYear: 2025 },
+                { model: "ID.4", minYear: 2021, maxYear: 2025 },
+                { model: "Jetta", minYear: 2005, maxYear: 2025 },
+                { model: "Jetta GLI", minYear: 2005, maxYear: 2025 },
+                { model: "Passat", minYear: 2005, maxYear: 2022 },
+                { model: "Phaeton", minYear: 2005, maxYear: 2006 },
+                { model: "R32", minYear: 2008, maxYear: 2008 },
+                { model: "Rabbit", minYear: 2006, maxYear: 2009 },
+                { model: "Taos", minYear: 2022, maxYear: 2025 },
+                { model: "Tiguan", minYear: 2009, maxYear: 2025 },
+                { model: "Touareg", minYear: 2005, maxYear: 2017 }
+            ],
+            "Volvo": [
+                { model: "C30", minYear: 2008, maxYear: 2013 },
+                { model: "C40 Recharge", minYear: 2022, maxYear: 2025 },
+                { model: "C70", minYear: 2006, maxYear: 2013 },
+                { model: "S40", minYear: 2005, maxYear: 2011 },
+                { model: "S60", minYear: 2005, maxYear: 2025 },
+                { model: "S80", minYear: 2005, maxYear: 2016 },
+                { model: "S90", minYear: 2017, maxYear: 2025 },
+                { model: "V50", minYear: 2005, maxYear: 2011 },
+                { model: "V60", minYear: 2015, maxYear: 2025 },
+                { model: "V70", minYear: 2005, maxYear: 2010 },
+                { model: "V90", minYear: 2017, maxYear: 2025 },
+                { model: "XC40", minYear: 2019, maxYear: 2025 },
+                { model: "XC60", minYear: 2009, maxYear: 2025 },
+                { model: "XC70", minYear: 2005, maxYear: 2016 },
+                { model: "XC90", minYear: 2005, maxYear: 2025 },
+                { model: "EX30", minYear: 2025, maxYear: 2025 },
+                { model: "EX90", minYear: 2025, maxYear: 2025 }
+            ]
+        },
 
         loadingMessages: [
             "Connecting to the estimator engine...",
@@ -75,140 +330,7 @@
             "Almost done — preparing your estimate..."
         ],
 
-        // Year-specific model filtering for makes with year-dependent availability
-        YEAR_SPECIFIC_MODELS: {
-            "Acura": {
-                "Integra Type S": { minYear: 2023 },
-                "MDX Type S": { minYear: 2022 }
-            },
-            "Audi": {
-                "Q4 e-tron": { minYear: 2022 },
-                "Q4 Sportback e-tron": { minYear: 2022 },
-                "e-tron GT": { minYear: 2021 }
-            },
-            "BMW": {
-                "M8": { minYear: 2019 },
-                "i4": { minYear: 2022 },
-                "iX": { minYear: 2022 },
-                "iX M60": { minYear: 2022 },
-                "iX xDrive50": { minYear: 2022 },
-                "i7": { minYear: 2023 }
-            },
-            "Cadillac": {
-                "Lyriq": { minYear: 2023 },
-                "Escalade IQ": { minYear: 2024 }
-            },
-            "Chevrolet": {
-                "Silverado EV": { minYear: 2024 },
-                "Blazer EV": { minYear: 2024 },
-                "Equinox EV": { minYear: 2024 },
-                "Bolt EV": { minYear: 2017, maxYear: 2023 },
-                "Bolt EUV": { minYear: 2022, maxYear: 2023 }
-            },
-            "Dodge": {
-                "Charger 6e": { minYear: 2024 },
-                "Durango": { minYear: 2000, maxYear: 2023 }
-            },
-            "Ford": {
-                "F-150 Lightning": { minYear: 2022 },
-                "Mustang Mach-E": { minYear: 2021 },
-                "E-Transit": { minYear: 2022 },
-                "Bronco": { minYear: 2021 },
-                "Bronco Sport": { minYear: 2021 }
-            },
-            "Genesis": {
-                "Electrified G70": { minYear: 2021 },
-                "Electrified G80": { minYear: 2021 },
-                "Electrified GV70": { minYear: 2021 },
-                "GV60": { minYear: 2023 },
-                "Electrified GV80": { minYear: 2022 }
-            },
-            "GMC": {
-                "Sierra EV": { minYear: 2024 },
-                "Hummer EV": { minYear: 2021 }
-            },
-            "Honda": {
-                "e": { minYear: 2020, maxYear: 2022 },
-                "Civic Type R": { minYear: 2023 },
-                "Prologue": { minYear: 2024 }
-            },
-            "Hyundai": {
-                "Ioniq": { minYear: 2021 },
-                "Ioniq 5": { minYear: 2021 },
-                "Ioniq 6": { minYear: 2023 },
-                "Kona Electric": { minYear: 2019 }
-            },
-            "Jeep": {
-                "Wrangler 4xe": { minYear: 2021 },
-                "Grand Cherokee 4xe": { minYear: 2021 },
-                "Wagoneer": { minYear: 2022 }
-            },
-            "Kia": {
-                "EV6": { minYear: 2021 },
-                "EV9": { minYear: 2023 },
-                "Niro EV": { minYear: 2019 },
-                "Sportage PHEV": { minYear: 2023 }
-            },
-            "Lexus": {
-                "RZ": { minYear: 2023 },
-                "LM": { minYear: 2024 }
-            },
-            "Lincoln": {
-                "Corsair Grand Touring": { minYear: 2020 },
-                "Aviator Grand Touring": { minYear: 2020 }
-            },
-            "Lucid": {
-                "Air": { minYear: 2021 }
-            },
-            "Mazda": {
-                "CX-50": { minYear: 2023 }
-            },
-            "Mercedes-Benz": {
-                "EQS": { minYear: 2021 },
-                "EQE": { minYear: 2022 },
-                "EQC": { minYear: 2019 },
-                "AMG G 63": { minYear: 2000 },
-                "EQG": { minYear: 2025 }
-            },
-            "Mitsubishi": {
-                "Outlander PHEV": { minYear: 2018 }
-            },
-            "Nissan": {
-                "Ariya": { minYear: 2023 },
-                "Leaf": { minYear: 2010 }
-            },
-            "Porsche": {
-                "Taycan": { minYear: 2020 }
-            },
-            "RAM": {
-                "1500 Revolution": { minYear: 2025 }
-            },
-            "Rivian": {
-                "R1T": { minYear: 2021 },
-                "R1S": { minYear: 2021 }
-            },
-            "Subaru": {
-                "BRZ": { minYear: 2013, maxYear: 2020 },
-                "BRZ": { minYear: 2022 },
-                "Solterra": { minYear: 2023 }
-            },
-            "Tesla": {
-                "Model S": { minYear: 2012 },
-                "Model 3": { minYear: 2017 },
-                "Model X": { minYear: 2015 },
-                "Model Y": { minYear: 2020 },
-                "Cybertruck": { minYear: 2023 }
-            },
-            "Toyota": {
-                "bZ4X": { minYear: 2023 },
-                "Corolla Cross": { minYear: 2020 }
-            },
-            "Volkswagen": {
-                "ID.4": { minYear: 2021 },
-                "ID.5": { minYear: 2021 },
-                "ID. Buzz": { minYear: 2024 }
-            }
-        },
+        pendingModelRequestId: 0,
 
         // DOM Elements (cached after creation)
         elements: {},
@@ -266,6 +388,8 @@
                 yearSelect: container.querySelector('#apex-year-select'),
                 makeSelect: container.querySelector('#apex-make-select'),
                 modelSelect: container.querySelector('#apex-model-select'),
+                mileageRange: container.querySelector('#apex-mileage-range'),
+                mileageValue: container.querySelector('#apex-mileage-value'),
                 
                 vehicleWrap: container.querySelector('#apex-vehicle-selects'),
                 contactName: container.querySelector('#apex-contact-name'),
@@ -288,7 +412,7 @@
 
         setupListeners() {
             console.log('[ApexWidget] Setting up event listeners with delegation');
-            const { backdrop, makeSelect, chatButton, inputField, sendBtn } = this.elements;
+            const { backdrop, makeSelect, yearSelect, mileageRange, chatButton, inputField, sendBtn } = this.elements;
             const self = this;
             
             if (backdrop) {
@@ -310,6 +434,15 @@
 
             if (makeSelect) {
                 makeSelect.addEventListener('change', () => self.onMakeChange());
+            }
+
+            if (yearSelect) {
+                yearSelect.addEventListener('change', () => self.onMakeChange());
+            }
+
+            if (mileageRange) {
+                mileageRange.addEventListener('input', () => self.updateMileageUI());
+                mileageRange.addEventListener('change', () => self.updateMileageUI());
             }
 
             if (inputField) {
@@ -350,7 +483,16 @@
         init() {
             this.appendBotMessage("Hi! I'm your Virtual Service Advisor. I can help with repair estimates, diagnostics, or answer any questions about your vehicle. What can I help you with today?", false);
             this.populateYears();
-            this.populateMakes();
+            this.elements.makeSelect.disabled = true;
+            this.loadExtendedVehicleData()
+                .catch((error) => {
+                    console.warn('[ApexWidget] Extended vehicle data failed to load, using built-in fallback:', error);
+                })
+                .finally(() => {
+                    this.populateMakes();
+                    this.elements.makeSelect.disabled = false;
+                });
+            this.updateMileageUI();
             this.setupViewportHandling();
             // If embed only provided shopId, optionally fetch colors/config from backend
             this.loadRemoteConfigIfNeeded();
@@ -363,6 +505,29 @@
                     greetingEl.style.animation = 'apex-greeting-fade-out 400ms cubic-bezier(0.22, 0.9, 0.32, 1) forwards';
                 }
             }, 10000); // 5s delay + 5s visible = 10s total
+        },
+
+        async loadExtendedVehicleData() {
+            const dataUrl = new URL('./generated_hardcoded_ranges.json', window.location.href).toString();
+            const response = await fetch(dataUrl, { cache: 'force-cache' });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const extraMakes = Array.isArray(data?.COMMON_MAKES) ? data.COMMON_MAKES : [];
+            const extraRanges = data?.HARD_CODED_MODEL_RANGES && typeof data.HARD_CODED_MODEL_RANGES === 'object'
+                ? data.HARD_CODED_MODEL_RANGES
+                : {};
+
+            this.COMMON_MAKES = [...new Set([...this.COMMON_MAKES, ...extraMakes])]
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b));
+
+            this.HARD_CODED_MODEL_RANGES = {
+                ...this.HARD_CODED_MODEL_RANGES,
+                ...extraRanges
+            };
         },
 
         setupViewportHandling() {
@@ -507,6 +672,22 @@
                                 <option value="">Select Model</option>
                             </select>
                         </div>
+                        <div class="apex-form-row apex-mileage-row">
+                            <div class="apex-mileage-header">
+                                <span class="apex-mileage-label">Mileage</span>
+                                <span id="apex-mileage-value" class="apex-mileage-value">60,000 mi</span>
+                            </div>
+                            <input
+                                id="apex-mileage-range"
+                                class="apex-mileage-range"
+                                type="range"
+                                min="0"
+                                max="300000"
+                                step="5000"
+                                value="60000"
+                                aria-label="Vehicle mileage"
+                            />
+                        </div>
                         <div class="apex-form-disclaimer">
                             By providing your number, you agree to receive lead updates via SMS. Msg & data rates may apply. Reply STOP to opt-out.
                         </div>
@@ -544,27 +725,19 @@
             `;
         },
 
-        // Filter models based on year availability for specific makes
-        filterModelsByYear(models, make, year) {
-            if (!this.YEAR_SPECIFIC_MODELS[make]) {
-                return models;
+        getHardcodedModelsForYear(make, year) {
+            const yearNum = parseInt(year, 10);
+            const ranges = this.HARD_CODED_MODEL_RANGES[make] || [];
+            if (!Number.isFinite(yearNum) || !ranges.length) {
+                return [];
             }
 
-            const yearSpecificRules = this.YEAR_SPECIFIC_MODELS[make];
-            const yearNum = parseInt(year, 10);
+            const models = ranges
+                .filter(entry => yearNum >= entry.minYear && yearNum <= entry.maxYear)
+                .map(entry => entry.model)
+                .filter(name => this.isModelAllowedForMake(name, make));
 
-            return models.filter(model => {
-                // If model has no year-specific rules, include it
-                if (!yearSpecificRules[model]) {
-                    return true;
-                }
-
-                const rule = yearSpecificRules[model];
-                const minYear = rule.minYear || 0;
-                const maxYear = rule.maxYear || 9999;
-
-                return yearNum >= minYear && yearNum <= maxYear;
-            });
+            return [...new Set(models)].sort((a, b) => a.localeCompare(b));
         },
 
         isModelAllowedForMake(modelName, make) {
@@ -617,57 +790,33 @@
         onMakeChange() {
             const year = this.elements.yearSelect.value;
             const make = this.elements.makeSelect.value;
+            const requestId = ++this.pendingModelRequestId;
 
             this.elements.modelSelect.innerHTML = '<option value="">Loading...</option>';
             this.elements.modelSelect.disabled = true;
 
-            if (!year || !make) return;
-
-            const cacheKey = `${make}::${year}`;
-            
-            // Check runtime cache first
-            if (this.modelCache[cacheKey]) {
-                this.populateModels(this.modelCache[cacheKey]);
+            if (!year || !make) {
+                this.elements.modelSelect.innerHTML = '<option value="">Select Model</option>';
                 return;
             }
 
-            // Check hard cache and display immediately
-            if (this.HARD_CACHED_MODELS[make]) {
-                const hardCachedModels = this.HARD_CACHED_MODELS[make]
-                    .filter(name => this.isModelAllowedForMake(name, make));
-                const filteredByYear = this.filterModelsByYear(hardCachedModels, make, year);
-                this.populateModels(filteredByYear);
+            const cacheKey = `${make}::${year}`;
+            if (!this.modelCache[cacheKey]) {
+                this.modelCache[cacheKey] = this.getHardcodedModelsForYear(make, year);
             }
 
-            const apiUrl = `https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${encodeURIComponent(year)}?format=json`;
+            if (requestId !== this.pendingModelRequestId) {
+                return;
+            }
 
-            fetch(apiUrl)
-                .then(r => r.json())
-                .then(data => {
-                    const models = data.Results
-                        ? data.Results.map(r => r.Model_Name)
-                            .filter(Boolean)
-                            .filter(name => this.isModelAllowedForMake(name, make))
-                        : [];
-                    
-                    // Apply year-specific filtering for make
-                    const filteredModels = this.filterModelsByYear(models, make, year);
-                    
-                    const unique = [...new Set(filteredModels)].sort((a, b) => a.localeCompare(b));
-                    this.modelCache[cacheKey] = unique;
-                    this.populateModels(unique);
-                })
-                .catch(err => {
-                    console.error('Model fetch error:', err);
-                    this.elements.modelSelect.innerHTML = '<option value="">Error</option>';
-                });
+            this.populateModels(this.modelCache[cacheKey]);
         },
 
         populateYears() {
-            const current = new Date().getFullYear();
-            const start = 2000;
+            const current = 2025;
+            const start = 2005;
             this.elements.yearSelect.innerHTML = '<option value="">Year</option>';
-            for (let y = current + 1; y >= start; y--) {
+            for (let y = current; y >= start; y--) {
                 this.elements.yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
             }
         },
@@ -925,6 +1074,29 @@
             };
         },
 
+        formatMileage(value) {
+            const parsed = Number.parseInt(value, 10);
+            if (!Number.isFinite(parsed)) return '0 mi';
+            return `${parsed.toLocaleString('en-US')} mi`;
+        },
+
+        updateMileageUI() {
+            const slider = this.elements.mileageRange;
+            const label = this.elements.mileageValue;
+            if (!slider) return;
+
+            const min = Number.parseInt(slider.min, 10) || 0;
+            const max = Number.parseInt(slider.max, 10) || 300000;
+            const value = Number.parseInt(slider.value, 10) || 0;
+            const ratio = max > min ? ((value - min) / (max - min)) : 0;
+            const progress = Math.max(0, Math.min(100, ratio * 100));
+
+            slider.style.setProperty('--apex-mileage-progress', `${progress}%`);
+            if (label) {
+                label.textContent = this.formatMileage(value);
+            }
+        },
+
         removeImage() {
             this.imageUploadToken += 1;
             this.imageProcessingPromise = null;
@@ -989,6 +1161,7 @@
                 message: text,
                 shop_id: this.SHOP_ID,
                 session_id: this.SESSION_ID,
+                vehicle_mileage: Number.parseInt(this.elements.mileageRange?.value || '0', 10) || 0,
                 vehicle: {
                     year: this.elements.yearSelect.value || null,
                     make: this.elements.makeSelect.value || null,
@@ -1521,6 +1694,102 @@
                     width: 100%;
                 }
 
+                .apex-mileage-row {
+                    flex-direction: column;
+                    gap: 8px;
+                    padding: 2px 4px 0;
+                }
+
+                .apex-mileage-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 8px;
+                    font-size: 12px;
+                    color: var(--apex-text-muted);
+                    letter-spacing: 0.2px;
+                }
+
+                .apex-mileage-label {
+                    color: var(--apex-text-muted);
+                    font-weight: 500;
+                }
+
+                .apex-mileage-value {
+                    color: var(--apex-text);
+                    font-weight: 600;
+                    font-variant-numeric: tabular-nums;
+                }
+
+                .apex-mileage-range {
+                    appearance: none;
+                    -webkit-appearance: none;
+                    width: 100%;
+                    height: 10px;
+                    border-radius: 999px;
+                    border: 1px solid var(--apex-border);
+                    background: linear-gradient(
+                        90deg,
+                        var(--apex-blue) 0%,
+                        #60a5fa 55%,
+                        #2563eb var(--apex-mileage-progress, 0%),
+                        rgba(148, 163, 184, 0.28) var(--apex-mileage-progress, 0%),
+                        rgba(148, 163, 184, 0.2) 100%
+                    );
+                    transition: background 140ms linear, border-color 200ms ease, box-shadow 200ms ease;
+                    cursor: pointer;
+                    outline: none;
+                }
+
+                .apex-mileage-range:hover {
+                    border-color: var(--apex-blue);
+                }
+
+                .apex-mileage-range:focus {
+                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+                }
+
+                .apex-mileage-range::-webkit-slider-runnable-track {
+                    height: 10px;
+                    background: transparent;
+                    border-radius: 999px;
+                }
+
+                .apex-mileage-range::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    border: 2px solid rgba(255, 255, 255, 0.85);
+                    background: linear-gradient(135deg, var(--apex-blue) 0%, #2563eb 100%);
+                    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
+                    margin-top: -6px;
+                    transition: transform 140ms ease;
+                }
+
+                .apex-mileage-range:active::-webkit-slider-thumb {
+                    transform: scale(1.06);
+                }
+
+                .apex-mileage-range::-moz-range-track {
+                    height: 10px;
+                    border-radius: 999px;
+                    background: transparent;
+                    border: none;
+                }
+
+                .apex-mileage-range::-moz-range-thumb {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    border: 2px solid rgba(255, 255, 255, 0.85);
+                    background: linear-gradient(135deg, var(--apex-blue) 0%, #2563eb 100%);
+                    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
+                    transition: transform 140ms ease;
+                    cursor: pointer;
+                }
+
                 .apex-form-disclaimer {
                     font-size: 11px;
                     color: rgba(148, 163, 184, 0.6);
@@ -1614,6 +1883,10 @@
                     #apex-chat-input {
                         font-size: 16px;
                     }
+
+                    .apex-mileage-header {
+                        font-size: 13px;
+                    }
                 }
 
                 @media (max-width: 430px) {
@@ -1674,6 +1947,10 @@
                     .apex-select {
                         padding: 10px 12px;
                         font-size: 16px;
+                    }
+
+                    .apex-mileage-row {
+                        gap: 6px;
                     }
 
                     #apex-chat-input-area {
