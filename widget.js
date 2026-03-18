@@ -510,7 +510,7 @@
 
         init() {
             console.log(`[ApexWidget] Build ${this.BUILD_VERSION} loaded`);
-            this.appendBotMessage("Hi! I'm your Virtual Service Advisor. I can help with repair estimates, diagnostics, or answer any questions about your vehicle. What can I help you with today?", false);
+            this.appendBotMessage("Hi! I'm Vetra your Virtual Service Advisor. I can help with repair estimates, diagnostics, or answer any questions about your vehicle. What can I help you with today?", false);
             this.populateYears();
             this.elements.makeSelect.disabled = true;
             this.loadExtendedVehicleData()
@@ -707,7 +707,7 @@
                             </svg>
                         </div>
                         <div id="apex-header-text">
-                            <div id="apex-header-title">APEX Virtual Service Advisor</div>
+                            <div id="apex-header-title">Vetra Virtual Service Advisor</div>
                             <div id="apex-header-subtitle">
                                 <span class="apex-status-indicator"></span>
                                 <span>Online</span>
