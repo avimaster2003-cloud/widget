@@ -407,6 +407,7 @@
                 modelSelect: container.querySelector('#apex-model-select'),
                 mileageRange: container.querySelector('#apex-mileage-range'),
                 mileageValue: container.querySelector('#apex-mileage-value'),
+                buildVersion: container.querySelector('#apex-build-version'),
                 
                 vehicleWrap: container.querySelector('#apex-vehicle-selects'),
                 contactName: container.querySelector('#apex-contact-name'),
@@ -460,6 +461,15 @@
             if (mileageRange) {
                 mileageRange.addEventListener('input', () => self.updateMileageUI());
                 mileageRange.addEventListener('change', () => self.updateMileageUI());
+                mileageRange.addEventListener('pointerdown', () => {
+                    mileageRange.classList.add('is-dragging');
+                });
+                mileageRange.addEventListener('pointerup', () => {
+                    mileageRange.classList.remove('is-dragging');
+                });
+                mileageRange.addEventListener('pointercancel', () => {
+                    mileageRange.classList.remove('is-dragging');
+                });
             }
 
             if (inputField) {
@@ -511,6 +521,9 @@
                     this.elements.makeSelect.disabled = false;
                 });
             this.updateMileageUI();
+            if (this.elements.buildVersion) {
+                this.elements.buildVersion.textContent = `Widget Build ${this.BUILD_VERSION}`;
+            }
             this.setupViewportHandling();
             // If embed only provided shopId, optionally fetch colors/config from backend
             this.loadRemoteConfigIfNeeded();
@@ -709,6 +722,7 @@
                         <div class="apex-form-disclaimer">
                             By providing your number, you agree to receive lead updates via SMS. Msg & data rates may apply. Reply STOP to opt-out.
                         </div>
+                        <div id="apex-build-version" class="apex-build-version" aria-live="polite"></div>
                     </div>
                     <div id="apex-chat-input-area">
                         <div id="apex-image-upload-wrapper">
@@ -1714,8 +1728,12 @@
 
                 .apex-mileage-row {
                     flex-direction: column;
-                    gap: 8px;
-                    padding: 2px 4px 0;
+                    gap: 9px;
+                    padding: 8px 10px;
+                    border: 1px solid rgba(148, 163, 184, 0.22);
+                    border-radius: 12px;
+                    background: radial-gradient(circle at 18% 0%, rgba(96, 165, 250, 0.1) 0%, rgba(15, 23, 42, 0.18) 48%, rgba(15, 23, 42, 0.08) 100%);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 20px rgba(2, 6, 23, 0.2);
                 }
 
                 .apex-mileage-header {
@@ -1737,38 +1755,42 @@
                     color: var(--apex-text);
                     font-weight: 600;
                     font-variant-numeric: tabular-nums;
+                    text-shadow: 0 0 12px rgba(96, 165, 250, 0.25);
                 }
 
                 .apex-mileage-range {
                     appearance: none;
                     -webkit-appearance: none;
                     width: 100%;
-                    height: 10px;
+                    height: 12px;
                     border-radius: 999px;
-                    border: 1px solid var(--apex-border);
+                    border: 1px solid rgba(148, 163, 184, 0.35);
                     background: linear-gradient(
                         90deg,
-                        var(--apex-blue) 0%,
-                        #60a5fa 55%,
-                        #2563eb var(--apex-mileage-progress, 0%),
-                        rgba(148, 163, 184, 0.28) var(--apex-mileage-progress, 0%),
-                        rgba(148, 163, 184, 0.2) 100%
+                        #2563eb 0%,
+                        #3b82f6 34%,
+                        #60a5fa 68%,
+                        #93c5fd var(--apex-mileage-progress, 0%),
+                        rgba(148, 163, 184, 0.3) var(--apex-mileage-progress, 0%),
+                        rgba(148, 163, 184, 0.16) 100%
                     );
-                    transition: background 140ms linear, border-color 200ms ease, box-shadow 200ms ease;
+                    transition: background 120ms linear, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
                     cursor: pointer;
                     outline: none;
+                    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.45), 0 1px 0 rgba(255, 255, 255, 0.06);
                 }
 
                 .apex-mileage-range:hover {
                     border-color: var(--apex-blue);
+                    transform: translateY(-0.5px);
                 }
 
                 .apex-mileage-range:focus {
-                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+                    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.45), 0 0 0 3px rgba(59, 130, 246, 0.18), 0 0 18px rgba(59, 130, 246, 0.22);
                 }
 
                 .apex-mileage-range::-webkit-slider-runnable-track {
-                    height: 10px;
+                    height: 12px;
                     background: transparent;
                     border-radius: 999px;
                 }
@@ -1776,36 +1798,54 @@
                 .apex-mileage-range::-webkit-slider-thumb {
                     -webkit-appearance: none;
                     appearance: none;
-                    width: 20px;
-                    height: 20px;
+                    width: 24px;
+                    height: 24px;
                     border-radius: 50%;
-                    border: 2px solid rgba(255, 255, 255, 0.85);
-                    background: linear-gradient(135deg, var(--apex-blue) 0%, #2563eb 100%);
-                    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
-                    margin-top: -6px;
-                    transition: transform 140ms ease;
+                    border: 2px solid rgba(255, 255, 255, 0.88);
+                    background: radial-gradient(circle at 28% 25%, #ffffff 0%, #dbeafe 20%, #60a5fa 44%, #2563eb 100%);
+                    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.5), 0 0 0 2px rgba(59, 130, 246, 0.25);
+                    margin-top: -7px;
+                    transition: transform 120ms ease, box-shadow 120ms ease;
                 }
 
                 .apex-mileage-range:active::-webkit-slider-thumb {
-                    transform: scale(1.06);
+                    transform: scale(1.1);
+                    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.58), 0 0 0 4px rgba(59, 130, 246, 0.28);
+                }
+
+                .apex-mileage-range.is-dragging {
+                    border-color: #60a5fa;
+                    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.45), 0 0 0 3px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.3);
                 }
 
                 .apex-mileage-range::-moz-range-track {
-                    height: 10px;
+                    height: 12px;
                     border-radius: 999px;
                     background: transparent;
                     border: none;
                 }
 
                 .apex-mileage-range::-moz-range-thumb {
-                    width: 20px;
-                    height: 20px;
+                    width: 24px;
+                    height: 24px;
                     border-radius: 50%;
-                    border: 2px solid rgba(255, 255, 255, 0.85);
-                    background: linear-gradient(135deg, var(--apex-blue) 0%, #2563eb 100%);
-                    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
-                    transition: transform 140ms ease;
+                    border: 2px solid rgba(255, 255, 255, 0.88);
+                    background: radial-gradient(circle at 28% 25%, #ffffff 0%, #dbeafe 20%, #60a5fa 44%, #2563eb 100%);
+                    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.5), 0 0 0 2px rgba(59, 130, 246, 0.25);
+                    transition: transform 120ms ease, box-shadow 120ms ease;
                     cursor: pointer;
+                }
+
+                .apex-build-version {
+                    margin-top: 2px;
+                    padding: 0 4px;
+                    font-size: 10px;
+                    letter-spacing: 0.4px;
+                    color: rgba(148, 163, 184, 0.52);
+                    text-transform: uppercase;
+                    text-align: right;
+                    font-weight: 500;
+                    user-select: none;
                 }
 
                 .apex-form-disclaimer {
