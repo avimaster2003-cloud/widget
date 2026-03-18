@@ -18,7 +18,24 @@
             return new URLSearchParams(window.location.search);
         }
     })();
+
+    const SCRIPT_BASE_URL = (function(){
+        try {
+            let s = document.currentScript;
+            if (!s) {
+                const scripts = document.getElementsByTagName('script');
+                s = scripts[scripts.length - 1];
+            }
+            const src = s && s.src ? s.src : window.location.href;
+            const resolved = new URL(src, window.location.href);
+            return new URL('./', resolved).toString();
+        } catch (e) {
+            return window.location.href;
+        }
+    })();
+
     window.ApexWidget = {
+        BUILD_VERSION: "2026.03.17.3",
         // Configuration (read overrides from script query params)
         SHOP_ID: SCRIPT_PARAMS.get('shopId') || "1019",
         PRIMARY_COLOR: SCRIPT_PARAMS.get('primaryColor') || SCRIPT_PARAMS.get('primary') || "#3B82F6",
@@ -481,6 +498,7 @@
         },
 
         init() {
+            console.log(`[ApexWidget] Build ${this.BUILD_VERSION} loaded`);
             this.appendBotMessage("Hi! I'm your Virtual Service Advisor. I can help with repair estimates, diagnostics, or answer any questions about your vehicle. What can I help you with today?", false);
             this.populateYears();
             this.elements.makeSelect.disabled = true;
@@ -508,7 +526,7 @@
         },
 
         async loadExtendedVehicleData() {
-            const dataUrl = new URL('./generated_hardcoded_ranges.json', window.location.href).toString();
+            const dataUrl = new URL('generated_hardcoded_ranges.json', SCRIPT_BASE_URL).toString();
             const response = await fetch(dataUrl, { cache: 'force-cache' });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
