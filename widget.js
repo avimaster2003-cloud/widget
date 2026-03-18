@@ -35,7 +35,7 @@
     })();
 
     window.ApexWidget = {
-        BUILD_VERSION: "3.17.v3",
+        BUILD_VERSION: "3.18.v8",
         // Configuration (read overrides from script query params)
         SHOP_ID: SCRIPT_PARAMS.get('shopId') || "1019",
         PRIMARY_COLOR: SCRIPT_PARAMS.get('primaryColor') || SCRIPT_PARAMS.get('primary') || "#3B82F6",
@@ -931,7 +931,38 @@
             this.elements.prideTextDiv.style.pointerEvents = 'auto';
         },
 
-        appendBotMessage(text, typewriterEffect = true) {
+        normalizeBookingUrl(url) {
+            if (typeof url !== 'string') return null;
+            const trimmed = url.trim();
+            if (!trimmed) return null;
+
+            try {
+                const parsed = new URL(trimmed, window.location.href);
+                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                    return null;
+                }
+                return parsed.toString();
+            } catch (error) {
+                return null;
+            }
+        },
+
+        appendBookingButton(messageDiv, bookingUrl) {
+            const safeBookingUrl = this.normalizeBookingUrl(bookingUrl);
+            if (!messageDiv || !safeBookingUrl) return;
+
+            const bookingLink = document.createElement('a');
+            bookingLink.classList.add('apex-booking-link');
+            bookingLink.href = safeBookingUrl;
+            bookingLink.target = '_blank';
+            bookingLink.rel = 'noopener noreferrer';
+            bookingLink.setAttribute('aria-label', 'Book Drop-Off');
+            bookingLink.innerHTML = '<span class="apex-booking-icon" aria-hidden="true">📅</span><span>Book Drop-Off</span>';
+
+            messageDiv.appendChild(bookingLink);
+        },
+
+        appendBotMessage(text, typewriterEffect = true, bookingUrl = null) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('apex-message', 'apex-bot-message');
             messageDiv.innerHTML = '<span class="typing-text"></span>';
@@ -941,18 +972,32 @@
                 this.isTyping = true;
                 this.typewriterText(messageDiv.querySelector('.typing-text'), text, () => {
                     this.isTyping = false;
+                    this.appendBookingButton(messageDiv, bookingUrl);
+                    this.elements.messagesDiv.scrollTop = this.elements.messagesDiv.scrollHeight;
                 });
             } else {
                 messageDiv.querySelector('.typing-text').textContent = text;
+                this.appendBookingButton(messageDiv, bookingUrl);
             }
 
             this.elements.messagesDiv.scrollTop = this.elements.messagesDiv.scrollHeight;
         },
 
-        appendUserMessage(text) {
+        appendUserMessage(text, imageDataUrl = null) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('apex-message', 'apex-user-message');
-            messageDiv.textContent = text;
+            if (imageDataUrl) {
+                const img = document.createElement('img');
+                img.src = imageDataUrl;
+                img.classList.add('apex-chat-image');
+                img.alt = 'Uploaded photo';
+                messageDiv.appendChild(img);
+            }
+            if (text) {
+                const textSpan = document.createElement('span');
+                textSpan.textContent = text;
+                messageDiv.appendChild(textSpan);
+            }
             this.elements.messagesDiv.appendChild(messageDiv);
             this.elements.messagesDiv.scrollTop = this.elements.messagesDiv.scrollHeight;
         },
@@ -1040,6 +1085,52 @@
             });
         },
 
+        compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 800;
+                            const targetWidth = Math.min(MAX_WIDTH, img.width || MAX_WIDTH);
+                            const scaleSize = targetWidth / (img.width || targetWidth);
+                            const targetHeight = Math.max(1, Math.round((img.height || targetWidth) * scaleSize));
+
+                            canvas.width = targetWidth;
+                            canvas.height = targetHeight;
+
+                            const ctx = canvas.getContext('2d');
+                            if (!ctx) {
+                                reject(new Error('Failed to get image canvas context'));
+                                return;
+                            }
+
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                            resolve(compressedBase64);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+
+                    img.onerror = () => {
+                        reject(new Error('Failed to decode uploaded image'));
+                    };
+
+                    img.src = event.target.result;
+                };
+
+                reader.onerror = () => {
+                    reject(reader.error || new Error('Failed to read image file'));
+                };
+
+                reader.readAsDataURL(file);
+            });
+        },
+
         handleImageUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -1050,55 +1141,51 @@
                 return;
             }
 
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                this.appendBotMessage('Image size must be less than 5MB.', false);
+            // Validate file size (allow larger originals; image is compressed before send)
+            if (file.size > 20 * 1024 * 1024) {
+                this.appendBotMessage('Image is too large. Please choose one under 20MB.', false);
                 return;
             }
 
             const uploadToken = ++this.imageUploadToken;
             this.setImageProcessing(true);
 
-            // Read file as base64
-            const reader = new FileReader();
-            this.imageProcessingPromise = new Promise((resolve, reject) => {
-                reader.onload = (event) => {
-                    try {
-                        if (uploadToken !== this.imageUploadToken) {
-                            resolve();
-                            return;
-                        }
-
-                        const dataUrl = event.target.result;
-                        this.elements.imageDataHolder.dataset.imageBase64 = dataUrl;
-                        this.elements.imageDataHolder.dataset.imageType = file.type;
-                        
-                        // Show preview
-                        this.elements.imagePreview.style.backgroundImage = `url('${dataUrl}')`;
-                        this.elements.imageUploadWrapper.style.display = 'none';
-                        this.elements.imagePreviewWrapper.style.display = 'flex';
-
-                        const parsed = this.parseImageDataUrl(dataUrl, file.type);
-                        if (!parsed) {
-                            console.warn('[ApexWidget] Uploaded image data URL appears malformed');
-                        } else {
-                            console.log('[ApexWidget] Image payload prepared:', {
-                                mime_type: parsed.mimeType,
-                                base64_length: parsed.base64.length,
-                                estimated_bytes: parsed.estimatedBytes
-                            });
-                        }
-
-                        resolve();
-                    } catch (error) {
-                        reject(error);
+            this.imageProcessingPromise = this.compressImage(file)
+                .then((dataUrl) => {
+                    if (uploadToken !== this.imageUploadToken) {
+                        return;
                     }
-                };
 
-                reader.onerror = () => {
-                    reject(reader.error || new Error('Failed to read image file'));
-                };
-            })
+                    this.elements.imageDataHolder.dataset.imageBase64 = dataUrl;
+                    this.elements.imageDataHolder.dataset.imageType = 'image/jpeg';
+
+                    this.elements.imagePreview.style.backgroundImage = `url('${dataUrl}')`;
+                    this.elements.imageUploadWrapper.style.display = 'none';
+                    this.elements.imagePreviewWrapper.style.display = 'flex';
+
+                    const parsed = this.parseImageDataUrl(dataUrl, 'image/jpeg');
+                    if (!parsed) {
+                        console.warn('[ApexWidget] Compressed image data URL appears malformed');
+                    } else {
+                        const originalBytes = Number(file.size || 0);
+                        const compressedBytes = Number(parsed.estimatedBytes || 0);
+                        const savedBytes = Math.max(0, originalBytes - compressedBytes);
+                        const reductionPercent = originalBytes > 0
+                            ? Number(((savedBytes / originalBytes) * 100).toFixed(1))
+                            : 0;
+
+                        console.log('[ApexWidget] Compressed image payload prepared:', {
+                            original_size_bytes: originalBytes,
+                            compressed_size_bytes: compressedBytes,
+                            saved_bytes: savedBytes,
+                            reduction_percent: reductionPercent,
+                            original_mime_type: file.type,
+                            mime_type: parsed.mimeType,
+                            base64_length: parsed.base64.length,
+                            estimated_bytes: parsed.estimatedBytes
+                        });
+                    }
+                })
                 .catch((err) => {
                     if (uploadToken === this.imageUploadToken) {
                         this.appendBotMessage('There was a problem processing that image. Please try again.', false);
@@ -1112,8 +1199,6 @@
                         this.imageProcessingPromise = null;
                     }
                 });
-
-            reader.readAsDataURL(file);
         },
 
         parseImageDataUrl(dataUrl, fallbackMimeType = '') {
@@ -1221,15 +1306,15 @@
             this.elements.inputField.disabled = true;
             this.elements.sendBtn.disabled = true;
 
-            this.appendUserMessage(text);
-            this.appendTypingIndicator();
-
-            this.elements.vehicleWrap.classList.add('select-hidden');
-
-            // Get image data if available
+            // Get image data if available (must be before appendUserMessage so thumbnail shows)
             const imageBase64 = this.elements.imageDataHolder.dataset.imageBase64 || '';
             const imageType = this.elements.imageDataHolder.dataset.imageType || '';
             const parsedImage = imageBase64 ? this.parseImageDataUrl(imageBase64, imageType) : null;
+
+            this.appendUserMessage(text, imageBase64 || null);
+            this.appendTypingIndicator();
+
+            this.elements.vehicleWrap.classList.add('select-hidden');
 
             const payload = {
                 message: text,
@@ -1283,11 +1368,12 @@
 
                 // Only display if there's a proper message field
                 const message = data.output || data.message || data.text;
+                const bookingUrl = self.normalizeBookingUrl(data.booking_url || data.bookingUrl || null);
                 if (message && typeof message === 'string') {
-                    self.appendBotMessage(message, true);
+                    self.appendBotMessage(message, true, bookingUrl);
                 } else {
                     // If no proper message, show generic success
-                    self.appendBotMessage("Thanks! We've received your request and will get back to you shortly.", true);
+                    self.appendBotMessage("Thanks! We've received your request and will get back to you shortly.", true, bookingUrl);
                     console.warn('[ApexWidget] Unexpected response format:', data);
                 }
 
@@ -1604,6 +1690,53 @@
 
                 .apex-bot-message { background: var(--apex-card); color: var(--apex-text); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--apex-border); }
                 .apex-user-message { background: linear-gradient(135deg, var(--apex-blue) 0%, #2563EB 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
+                .apex-user-message .apex-chat-image { display: block; max-width: 100%; max-height: 180px; width: auto; border-radius: 8px; margin-bottom: 6px; object-fit: contain; }
+                .apex-user-message span { display: block; }
+
+                .apex-bot-message .typing-text {
+                    display: block;
+                    white-space: pre-wrap;
+                }
+
+                .apex-booking-link {
+                    margin-top: 10px;
+                    width: 100%;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    padding: 11px 14px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(147, 197, 253, 0.45);
+                    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+                    color: #ffffff;
+                    font-size: 13px;
+                    font-weight: 700;
+                    letter-spacing: 0.2px;
+                    text-decoration: none;
+                    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.32);
+                    transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+                }
+
+                .apex-booking-link:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.4);
+                    filter: brightness(1.03);
+                }
+
+                .apex-booking-link:active {
+                    transform: translateY(0);
+                }
+
+                .apex-booking-link:focus-visible {
+                    outline: 2px solid #bfdbfe;
+                    outline-offset: 2px;
+                }
+
+                .apex-booking-icon {
+                    font-size: 14px;
+                    line-height: 1;
+                }
 
                 .apex-typing-bubble {
                     max-width: 85%;
