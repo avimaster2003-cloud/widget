@@ -3,20 +3,417 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Apex Widget</title>
+    <meta name="theme-color" content="#0b1220" />
+    <title>Apex Conversion Auto Garage</title>
     <style>
+        :root {
+            --bg: #f5f5f5;
+            --surface: #ffffff;
+            --surface-alt: #f0f2f4;
+            --border: #d8dde3;
+            --text: #1f2933;
+            --muted: #5b6876;
+            --accent: #1e3a5f;
+            --accent-2: #2f6fb0;
+            --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
         html, body {
             margin: 0;
             padding: 0;
-            background: transparent;
+            min-height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            padding-bottom: 96px;
+        }
+
+        .topbar {
+            background: var(--accent);
+            color: #fff;
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        .topbar-inner,
+        .nav-inner,
+        .hero-inner,
+        .section-inner,
+        .footer-inner {
+            width: min(1100px, calc(100% - 24px));
+            margin: 0 auto;
+        }
+
+        .topbar-inner {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 0;
+        }
+
+        .brand strong {
+            display: block;
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        .brand span {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 18px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .hero {
+            background: var(--surface-alt);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-inner {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
+            padding: 34px 0;
+        }
+
+        .hero-copy h1 {
+            margin: 0 0 14px;
+            font-size: clamp(34px, 5vw, 50px);
+            line-height: 1.05;
+        }
+
+        .hero-copy p {
+            margin: 0 0 18px;
+            max-width: 680px;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .button,
+        .button-secondary {
+            border: 0;
+            border-radius: 8px;
+            padding: 13px 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .button {
+            background: var(--accent-2);
+            color: white;
+        }
+
+        .button-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .hero-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 22px;
+        }
+
+        .hero-card h2,
+        .section-card h2 {
+            margin: 0 0 12px;
+            font-size: 24px;
+        }
+
+        .info-list {
+            display: grid;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .main-grid {
+            width: min(1100px, calc(100% - 24px));
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+            padding: 26px 0;
+        }
+
+        .section-stack {
+            display: grid;
+            gap: 20px;
+        }
+
+        .section-card,
+        .sidebar-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 22px;
+        }
+
+        .section-card p,
+        .sidebar-card p,
+        .section-card li,
+        .sidebar-card li {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .service-box,
+        .hour-row,
+        .contact-box {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fafafa;
+            padding: 14px;
+        }
+
+        .service-box strong,
+        .hour-row strong,
+        .contact-box strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text);
+            font-size: 15px;
+        }
+
+        .hours-list,
+        .contact-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .sidebar {
+            display: grid;
+            gap: 20px;
+            align-self: start;
+        }
+
+        .widget-note {
+            background: #eef5fb;
+            border: 1px solid #c9dced;
+            color: #35506c;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .footer-inner {
+            padding: 18px 0 28px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        @media (max-width: 860px) {
+            .hero-inner,
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .topbar-inner,
+            .button-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .button,
+            .button-secondary {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <script src="./widget.js?v=20260317-3"></script>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div>Call Apex Conversion Auto Garage: (555) 321-2299</div>
+            <div>Open Mon–Fri 7:30 AM–6:00 PM · Sat 8:00 AM–2:00 PM</div>
+        </div>
+    </div>
+
+    <header class="nav">
+        <div class="nav-inner">
+            <div class="brand">
+                <strong>Apex Conversion Auto Garage</strong>
+                <span>General repair, diagnostics, maintenance, brake service, suspension, and drivability inspections</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#services">Services</a>
+                <a href="#hours">Hours</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-copy">
+                <h1>Trusted local auto repair and diagnostics.</h1>
+                <p>
+                    Apex Conversion Auto Garage helps drivers with check engine lights, maintenance, brake concerns, steering and suspension issues, no-start conditions, and general repair needs. This local page is intentionally simple so the widget in the corner stands out as the main call to action.
+                </p>
+                <div class="button-row">
+                    <button class="button" id="open-widget-demo" type="button">Open service assistant</button>
+                    <button class="button-secondary" id="scroll-contact" type="button">View shop info</button>
+                </div>
+            </div>
+
+            <aside class="hero-card" id="hours">
+                <h2>Shop hours</h2>
+                <div class="hours-list">
+                    <div class="hour-row"><strong>Monday – Friday</strong><span>7:30 AM – 6:00 PM</span></div>
+                    <div class="hour-row"><strong>Saturday</strong><span>8:00 AM – 2:00 PM</span></div>
+                    <div class="hour-row"><strong>Sunday</strong><span>Closed</span></div>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <main class="main-grid">
+        <div class="section-stack">
+            <section class="section-card" id="services">
+                <h2>What we do</h2>
+                <div class="services-grid">
+                    <div class="service-box">
+                        <strong>Engine diagnostics</strong>
+                        <span>Check engine light diagnosis, drivability issues, misfires, and warning light inspections.</span>
+                    </div>
+                    <div class="service-box">
+                        <strong>Brake service</strong>
+                        <span>Brake noise, vibration, inspections, rotor concerns, and related safety repairs.</span>
+                    </div>
+                    <div class="service-box">
+                        <strong>Steering & suspension</strong>
+                        <span>Pulling, rough ride, worn components, and suspension system evaluations.</span>
+                    </div>
+                    <div class="service-box">
+                        <strong>Maintenance</strong>
+                        <span>Factory scheduled maintenance, fluids, filters, tune-up items, and general service.</span>
+                    </div>
+                    <div class="service-box">
+                        <strong>Battery & charging</strong>
+                        <span>Battery testing, charging system inspection, no-start checks, and electrical basics.</span>
+                    </div>
+                    <div class="service-box">
+                        <strong>Vehicle inspections</strong>
+                        <span>General mechanical inspections and pre-repair review before appointment scheduling.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section-card" id="about">
+                <h2>About our shop</h2>
+                <p>
+                    We focus on straightforward service, clear communication, and helping customers explain vehicle concerns quickly. The widget in the corner is the featured experience on this demo page, giving visitors a simple way to submit vehicle information and repair questions without a long form.
+                </p>
+            </section>
+        </div>
+
+        <aside class="sidebar">
+            <section class="sidebar-card">
+                <h2>Use the widget</h2>
+                <div class="widget-note">
+                    The widget in the bottom corner is the main demo element on this page. Open it to enter vehicle year, make, model, mileage, upload a photo, and submit a service request.
+                </div>
+            </section>
+
+            <section class="sidebar-card" id="contact">
+                <h2>Contact</h2>
+                <div class="contact-list">
+                    <div class="contact-box">
+                        <strong>Phone</strong>
+                        <span>(555) 321-2299</span>
+                    </div>
+                    <div class="contact-box">
+                        <strong>Address</strong>
+                        <span>2480 Service Lane, Tampa, FL 33619</span>
+                    </div>
+                    <div class="contact-box">
+                        <strong>Best way to start</strong>
+                        <span>Use the service assistant widget in the corner for diagnostics, maintenance questions, and estimate intake.</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            Apex Conversion Auto Garage · Local demo site for showcasing the corner service assistant widget.
+        </div>
+    </footer>
+
+    <script src="./widget.js?v=3.17.v3"></script>
     <script>
         if (window.ApexWidget && typeof window.ApexWidget.create === 'function') {
             document.body.appendChild(window.ApexWidget.create());
+
+            const openWidget = () => window.ApexWidget.openChat();
+            const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            document.getElementById('open-widget-demo')?.addEventListener('click', openWidget);
+            document.getElementById('scroll-contact')?.addEventListener('click', () => scrollTo('contact'));
         }
     </script>
 </body>

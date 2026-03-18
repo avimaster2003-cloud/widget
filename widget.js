@@ -35,7 +35,7 @@
     })();
 
     window.ApexWidget = {
-        BUILD_VERSION: "2026.03.17.3",
+        BUILD_VERSION: "3.17.v3",
         // Configuration (read overrides from script query params)
         SHOP_ID: SCRIPT_PARAMS.get('shopId') || "1019",
         PRIMARY_COLOR: SCRIPT_PARAMS.get('primaryColor') || SCRIPT_PARAMS.get('primary') || "#3B82F6",
@@ -56,6 +56,7 @@
         viewportRafId: null,
         viewportChangeHandler: null,
         lastKeyboardOffset: 0,
+        keyboardShortcutBound: false,
         imageIsProcessing: false,
         imageProcessingPromise: null,
         imageUploadToken: 0,
@@ -407,7 +408,7 @@
                 modelSelect: container.querySelector('#apex-model-select'),
                 mileageRange: container.querySelector('#apex-mileage-range'),
                 mileageValue: container.querySelector('#apex-mileage-value'),
-                buildVersion: container.querySelector('#apex-build-version'),
+                buildVersionPill: container.querySelector('#apex-build-version-pill'),
                 
                 vehicleWrap: container.querySelector('#apex-vehicle-selects'),
                 contactName: container.querySelector('#apex-contact-name'),
@@ -521,10 +522,11 @@
                     this.elements.makeSelect.disabled = false;
                 });
             this.updateMileageUI();
-            if (this.elements.buildVersion) {
-                this.elements.buildVersion.textContent = `Widget Build ${this.BUILD_VERSION}`;
+            if (this.elements.buildVersionPill) {
+                this.elements.buildVersionPill.textContent = `Build ${this.BUILD_VERSION}`;
             }
             this.setupViewportHandling();
+            this.setupGlobalShortcut();
             // If embed only provided shopId, optionally fetch colors/config from backend
             this.loadRemoteConfigIfNeeded();
             
@@ -588,6 +590,33 @@
             this.updateViewportMetrics();
         },
 
+        setupGlobalShortcut() {
+            if (this.keyboardShortcutBound) return;
+
+            document.addEventListener('keydown', (event) => {
+                const target = event.target;
+                const tagName = target && target.tagName ? target.tagName.toLowerCase() : '';
+                const isEditable = !!(target && (target.isContentEditable || tagName === 'input' || tagName === 'textarea' || tagName === 'select'));
+
+                if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey && String(event.key).toLowerCase() === 'o') {
+                    if (isEditable) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    if (!this.chatIsOpen) {
+                        this.openChat();
+                    }
+
+                    if (this.elements.inputField && !window.matchMedia('(max-width: 768px)').matches) {
+                        this.elements.inputField.focus();
+                    }
+                }
+            });
+
+            this.keyboardShortcutBound = true;
+        },
+
         updateViewportMetrics() {
             const container = document.getElementById('apex-widget-container');
             if (!container) return;
@@ -599,6 +628,7 @@
 
             container.style.setProperty('--apex-runtime-vh', `${runtimeVh}px`);
             container.style.setProperty('--apex-keyboard-offset', `${keyboardOffset}px`);
+            this.updateMileageUI();
         },
 
         // Normalize color strings (ensure leading # and simple hex validation)
@@ -684,6 +714,7 @@
                             </div>
                             <div id="apex-header-model">Model - VETRA</div>
                         </div>
+                        <div id="apex-build-version-pill" class="apex-build-version-pill"></div>
                         <span id="apex-close-btn" role="button" aria-label="Close chat">✕</span>
                     </div>
                     <div id="apex-chat-messages"></div>
@@ -706,23 +737,22 @@
                         <div class="apex-form-row apex-mileage-row">
                             <div class="apex-mileage-header">
                                 <span class="apex-mileage-label">Mileage</span>
-                                <span id="apex-mileage-value" class="apex-mileage-value">60,000 mi</span>
+                                <span id="apex-mileage-value" class="apex-mileage-value">0 mi</span>
                             </div>
                             <input
                                 id="apex-mileage-range"
                                 class="apex-mileage-range"
                                 type="range"
                                 min="0"
-                                max="300000"
+                                max="200000"
                                 step="5000"
-                                value="60000"
+                                value="0"
                                 aria-label="Vehicle mileage"
                             />
                         </div>
                         <div class="apex-form-disclaimer">
                             By providing your number, you agree to receive lead updates via SMS. Msg & data rates may apply. Reply STOP to opt-out.
                         </div>
-                        <div id="apex-build-version" class="apex-build-version" aria-live="polite"></div>
                     </div>
                     <div id="apex-chat-input-area">
                         <div id="apex-image-upload-wrapper">
@@ -1118,12 +1148,24 @@
             if (!slider) return;
 
             const min = Number.parseInt(slider.min, 10) || 0;
-            const max = Number.parseInt(slider.max, 10) || 300000;
+            const max = Number.parseInt(slider.max, 10) || 200000;
             const value = Number.parseInt(slider.value, 10) || 0;
             const ratio = max > min ? ((value - min) / (max - min)) : 0;
             const progress = Math.max(0, Math.min(100, ratio * 100));
+            const sliderWidth = slider.getBoundingClientRect().width || 1;
+            const thumbWidth = 24;
+            const visualProgress = ratio <= 0
+                ? 0
+                : Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        ((((sliderWidth - thumbWidth) * ratio) + (thumbWidth / 2)) / sliderWidth) * 100
+                    )
+                );
 
             slider.style.setProperty('--apex-mileage-progress', `${progress}%`);
+            slider.style.setProperty('--apex-mileage-visual-progress', `${visualProgress}%`);
             if (label) {
                 label.textContent = this.formatMileage(value);
             }
@@ -1512,6 +1554,22 @@
                     opacity: 0.8;
                 }
 
+                .apex-build-version-pill {
+                    align-self: flex-start;
+                    margin-top: 2px;
+                    padding: 4px 8px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(255, 255, 255, 0.32);
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.1) 100%);
+                    color: rgba(255, 255, 255, 0.96);
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 0.45px;
+                    text-transform: uppercase;
+                    white-space: nowrap;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 4px 12px rgba(15, 23, 42, 0.28);
+                }
+
                 #apex-close-btn:hover { transform: rotate(90deg); opacity: 1; }
 
                 #apex-chat-messages {
@@ -1765,15 +1823,9 @@
                     height: 12px;
                     border-radius: 999px;
                     border: 1px solid rgba(148, 163, 184, 0.35);
-                    background: linear-gradient(
-                        90deg,
-                        #2563eb 0%,
-                        #3b82f6 34%,
-                        #60a5fa 68%,
-                        #93c5fd var(--apex-mileage-progress, 0%),
-                        rgba(148, 163, 184, 0.3) var(--apex-mileage-progress, 0%),
-                        rgba(148, 163, 184, 0.16) 100%
-                    );
+                    background:
+                        linear-gradient(90deg, #2563eb 0%, #3b82f6 45%, #60a5fa 100%) 0 0 / var(--apex-mileage-visual-progress, 0%) 100% no-repeat,
+                        linear-gradient(90deg, rgba(148, 163, 184, 0.3) 0%, rgba(148, 163, 184, 0.16) 100%) 0 0 / 100% 100% no-repeat;
                     transition: background 120ms linear, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
                     cursor: pointer;
                     outline: none;
@@ -1821,8 +1873,14 @@
                 .apex-mileage-range::-moz-range-track {
                     height: 12px;
                     border-radius: 999px;
-                    background: transparent;
+                    background: linear-gradient(90deg, rgba(148, 163, 184, 0.3) 0%, rgba(148, 163, 184, 0.16) 100%);
                     border: none;
+                }
+
+                .apex-mileage-range::-moz-range-progress {
+                    height: 12px;
+                    border-radius: 999px;
+                    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 45%, #60a5fa 100%);
                 }
 
                 .apex-mileage-range::-moz-range-thumb {
@@ -1834,18 +1892,6 @@
                     box-shadow: 0 6px 14px rgba(37, 99, 235, 0.5), 0 0 0 2px rgba(59, 130, 246, 0.25);
                     transition: transform 120ms ease, box-shadow 120ms ease;
                     cursor: pointer;
-                }
-
-                .apex-build-version {
-                    margin-top: 2px;
-                    padding: 0 4px;
-                    font-size: 10px;
-                    letter-spacing: 0.4px;
-                    color: rgba(148, 163, 184, 0.52);
-                    text-transform: uppercase;
-                    text-align: right;
-                    font-weight: 500;
-                    user-select: none;
                 }
 
                 .apex-form-disclaimer {
@@ -1984,13 +2030,6 @@
                         font-size: 11px;
                     }
 
-                    #apex-chat-messages {
-                        padding: 12px;
-                        gap: 10px;
-                    }
-
-                    .apex-form-section {
-                        padding: 12px 14px;
                         gap: 8px;
                         max-height: min(32vh, 220px);
                         overflow-y: auto;
