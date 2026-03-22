@@ -1496,8 +1496,8 @@
                     bottom: calc(100px + env(safe-area-inset-bottom, 0px));
                     right: calc(24px + env(safe-area-inset-right, 0px));
                     width: min(400px, calc(100vw - 32px - env(safe-area-inset-right, 0px)));
-                    height: min(650px, calc(100vh - 120px - env(safe-area-inset-bottom, 0px)));
-                    height: min(650px, calc(100dvh - 120px - env(safe-area-inset-bottom, 0px)));
+                    height: min(760px, calc(100vh - 120px - env(safe-area-inset-bottom, 0px)));
+                    height: min(760px, calc(100dvh - 120px - env(safe-area-inset-bottom, 0px)));
                     background: var(--apex-dark);
                     border-radius: 16px;
                     display: flex;
@@ -2106,8 +2106,8 @@
                         right: calc(8px + env(safe-area-inset-right, 0px));
                         bottom: calc(76px + env(safe-area-inset-bottom, 0px));
                         width: calc(100vw - 16px - env(safe-area-inset-right, 0px));
-                        height: min(78vh, calc(var(--apex-runtime-vh, 100dvh) - 96px));
-                        height: min(78dvh, calc(var(--apex-runtime-vh, 100dvh) - 96px));
+                        height: min(86vh, calc(var(--apex-runtime-vh, 100dvh) - 88px));
+                        height: min(86dvh, calc(var(--apex-runtime-vh, 100dvh) - 88px));
                         border-radius: 14px;
                     }
 
